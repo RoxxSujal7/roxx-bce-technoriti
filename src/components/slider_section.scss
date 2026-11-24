@@ -1,0 +1,61 @@
+.hollow_slider_text {
+    color: rgba(0, 0, 0, 0);
+    font-size: 17vmin;
+    font-weight: 700;
+    line-height: 20vmin;
+    -webkit-text-stroke: 2.5px white;
+    display: inline;
+    margin-right: 0.4em;
+    user-select: none;
+}
+
+.solid_slider_text {
+    color: white;
+    font-size: 17vmin;
+    font-weight: 800;
+    line-height: 20vmin;
+    display: inline;
+    margin-right: 0.4em;
+    user-select: none;
+}
+
+.scroll_content {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.ticker_track {
+    display: inline-flex;
+    white-space: nowrap;
+    will-change: scroll-position;
+}
+
+.slider_section {
+    background-color: black;
+    padding-top: 20vh;
+    padding-bottom: 10vh;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overflow: hidden;
+
+    @media(max-width: 767px){
+        padding-bottom: 0;
+        padding-top: 0;
+    }
+}

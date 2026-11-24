@@ -1,0 +1,75 @@
+.sponsors-page-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .sponsors-intro-banner,
+  .partner-cta-card {
+    background: linear-gradient(135deg, rgba(29, 28, 28, 0.95), rgba(40, 18, 55, 0.9));
+    border: 1px solid rgba(190, 0, 215, 0.35);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+
+  .section-eyebrow {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+
+  .text-purple {
+    color: #BE00D7 !important;
+  }
+
+  .bg-purple-subtle {
+    background-color: rgba(190, 0, 215, 0.15);
+    border: 1px solid rgba(190, 0, 215, 0.3);
+  }
+
+  .sponsor-card {
+    background: rgba(25, 24, 27, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      border-color: #BE00D7;
+      box-shadow: 0 12px 28px rgba(190, 0, 215, 0.2);
+    }
+
+    .sponsor-logo-box {
+      width: 58px;
+      height: 58px;
+      background: rgba(190, 0, 215, 0.15);
+      border: 1px solid #BE00D7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .sponsor-abbr {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #ffffff;
+        letter-spacing: 1px;
+      }
+    }
+  }
+
+  .btn-purple {
+    background-color: #BE00D7;
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #9e00b2;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+  }
+}

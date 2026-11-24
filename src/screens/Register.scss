@@ -1,0 +1,159 @@
+.register-page-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .registration-card {
+    background: rgba(22, 21, 24, 0.9);
+    border: 1px solid rgba(190, 0, 215, 0.35);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+  }
+
+  .bg-purple-glow {
+    background-color: #BE00D7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(190, 0, 215, 0.5);
+  }
+
+  .text-purple {
+    color: #BE00D7 !important;
+  }
+
+  .border-purple {
+    border-color: #BE00D7 !important;
+  }
+
+  .section-divider-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+  }
+
+  .dark-input {
+    background-color: #0c0c0e !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 0.92rem !important;
+
+    &:focus {
+      border-color: #BE00D7 !important;
+      box-shadow: 0 0 0 2px rgba(190, 0, 215, 0.25) !important;
+    }
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    option {
+      background-color: #1a1a1e;
+      color: #ffffff;
+    }
+  }
+
+  .accommodation-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+
+    .option-card {
+      background: rgba(12, 12, 14, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: rgba(190, 0, 215, 0.5);
+      }
+
+      &.selected {
+        border-color: #BE00D7;
+        background: rgba(190, 0, 215, 0.1);
+        box-shadow: 0 0 12px rgba(190, 0, 215, 0.25);
+      }
+
+      .option-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #ffffff;
+        margin-bottom: 4px;
+      }
+
+      .option-price {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #ffffff;
+        margin-bottom: 4px;
+      }
+
+      .option-desc {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+
+  .fee-summary-strip {
+    background: linear-gradient(135deg, rgba(30, 20, 38, 0.9), rgba(15, 14, 18, 0.95));
+    border: 1px solid rgba(190, 0, 215, 0.4);
+  }
+
+  .btn-purple {
+    background-color: #BE00D7;
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #9e00b2;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.technoriti-payment-modal {
+  .modal-content {
+    background-color: #121115 !important;
+    border: 1px solid rgba(190, 0, 215, 0.4) !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .order-summary-box {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dark-input {
+    background-color: #0c0c0e !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+  }
+
+  .btn-purple {
+    background-color: #BE00D7 !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+
+    &:hover {
+      background-color: #9e00b2 !important;
+    }
+  }
+
+  .success-icon {
+    font-size: 3rem;
+  }
+}

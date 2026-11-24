@@ -1,0 +1,55 @@
+@tailwind components;
+@tailwind utilities;
+
+:root,
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 11.4%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 293 100% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 12%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 240 5% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 4% 20%;
+  --input: 240 4% 24%;
+  --ring: 293 100% 42%;
+  --radius: 0.5rem;
+}
+
+body {
+  background-color: #000000;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.blur-xs {
+  filter: blur(4px);
+}
+
+.scale-102 {
+  transform: scale(1.02);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-2s {
+  animation: spin 2s linear infinite;
+}

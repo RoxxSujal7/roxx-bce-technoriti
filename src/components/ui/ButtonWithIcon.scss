@@ -1,0 +1,77 @@
+.button-with-icon {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 48px !important;
+  border-radius: 9999px !important;
+  background-color: #121115 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  padding: 4px 56px 4px 24px !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  width: fit-content !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  user-select: none !important;
+
+  &:hover {
+    background-color: #1b1a22 !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    padding: 4px 24px 4px 56px !important;
+    color: #ffffff !important;
+
+    .button-with-icon-circle {
+      right: calc(100% - 44px) !important;
+      transform: translateY(-50%) rotate(45deg) !important;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ffffff !important;
+    outline-offset: 2px !important;
+  }
+
+  &.disabled,
+  &:disabled {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
+
+  .button-with-icon-text {
+    position: relative !important;
+    z-index: 10 !important;
+    white-space: nowrap !important;
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: #ffffff !important;
+  }
+
+  .button-with-icon-circle {
+    position: absolute !important;
+    right: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) rotate(0deg) !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 9999px !important;
+    background-color: #ffffff !important;
+    color: #121115 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+
+    svg {
+      color: #121115 !important;
+      stroke: #121115 !important;
+      transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+  }
+}

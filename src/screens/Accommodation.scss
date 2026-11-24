@@ -1,0 +1,38 @@
+.accommodation-page-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .section-eyebrow {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+
+  .text-purple {
+    color: #BE00D7 !important;
+  }
+
+  .logistics-info-card,
+  .contacts-warden-card {
+    background: rgba(25, 24, 27, 0.85);
+    border: 1px solid rgba(190, 0, 215, 0.25);
+
+    .phone-btn {
+      color: #BE00D7;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #e070ff;
+        text-decoration: underline;
+      }
+    }
+  }
+}

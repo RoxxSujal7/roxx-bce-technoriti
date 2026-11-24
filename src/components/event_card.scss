@@ -1,0 +1,195 @@
+.EventCard {
+    padding: 5vmin;
+    margin-top: 4vmin;
+    background-color: #1d1c1c;
+    border-radius: 6vmin;
+    white-space: pre-line;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+
+    &:hover {
+        border-color: rgba(190, 0, 215, 0.4);
+    }
+}
+
+.eventac {
+    background-color: #1d1c1c !important;
+}
+
+.accordion {
+    box-shadow: none !important;
+}
+
+.title_row {
+    font-size: 5.2vmin;
+    font-weight: 700;
+    padding-left: 4vmin;
+    padding-bottom: 2vmin;
+    color: white;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    @media(max-width : 767px) {
+        justify-content: center;
+        margin-left: 0 !important;
+        font-size: 7vmin;
+        padding-left: 0;
+        text-align: center;
+    }
+}
+
+.event-category-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(190, 0, 215, 0.2);
+    border: 1px solid #BE00D7;
+    color: #00ffff;
+    margin-left: 15px;
+    vertical-align: middle;
+
+    @media(max-width: 767px) {
+        display: block;
+        margin: 8px auto 0 auto;
+    }
+}
+
+.event-meta-grid {
+    padding-left: 4vmin;
+    margin-bottom: 3vmin;
+
+    @media(max-width: 767px) {
+        padding-left: 0;
+    }
+
+    .meta-box {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+
+        .meta-label {
+            font-size: 0.72rem;
+            color: #aaaaaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .meta-val {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .prize-highlight {
+            color: #00ff88;
+            font-weight: 700;
+        }
+    }
+}
+
+.event_desc {
+    display: block;
+    max-width: 95% !important;
+    margin-left: 4vmin;
+    margin-bottom: 3%;
+    color: rgb(215, 215, 215);
+    font-size: 1rem;
+    line-height: 1.6;
+
+    @media(max-width: 767px) {
+        margin-left: 0;
+        max-width: 100% !important;
+        text-align: left;
+    }
+}
+
+.btn-purple:hover,
+.btn-purple:active,
+.btn-purple:focus,
+.btn-purple {
+    background-color: #BE00D7 !important;
+    color: white !important;
+    border: none !important;
+    min-width: 220px;
+    height: 7vmin;
+    min-height: 48px;
+    margin-top: 3vmin;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    border-radius: 3.5vmin !important;
+    margin-right: 4vmin;
+    box-shadow: 0 4px 20px rgba(190, 0, 215, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 26px rgba(190, 0, 215, 0.65);
+    }
+
+    @media(max-width: 767px) {
+        width: 100% !important;
+        margin-right: 0;
+    }
+}
+
+.btn-row {
+    display: flex;
+    justify-content: flex-end;
+
+    @media(max-width: 767px) {
+        justify-content: center;
+    }
+}
+
+.imagecol {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sideimg-box {
+    width: 100%;
+    min-height: 280px;
+    border-radius: 4vmin;
+    background: radial-gradient(circle at center, #23122c 0%, #0b0b0f 100%);
+    border: 2px solid rgba(190, 0, 215, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+
+    .sideimg-icon {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 16px;
+        filter: drop-shadow(0 0 10px #BE00D7);
+    }
+
+    .sideimg-tag {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: #ffffff;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px #BE00D7;
+    }
+
+    .sideimg-sub {
+        font-size: 0.75rem;
+        color: #00ffff;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-top: 6px;
+    }
+}

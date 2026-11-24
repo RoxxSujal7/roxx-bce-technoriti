@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ROXX TECHNORITI '26 Architecture",
+    "output": "roxx-technoriti-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "entry-and-routing",
+        "label": "Client Entry & Routing",
+        "focus": ["users", "hosting", "spa_entry", "core_views", "events_engine"],
+        "note": "Follows the delegate access flow from the edge host through HashRouter to the core views."
+      },
+      {
+        "id": "data-and-arenas",
+        "label": "29 Arenas & Data Architecture",
+        "focus": ["events_engine", "events_data", "motion_systems"],
+        "note": "Highlights the 29-competition immutable source of truth and polymorphic adapters."
+      },
+      {
+        "id": "logistics-and-auth",
+        "label": "Logistics & Authentication",
+        "focus": ["tariff_system", "auth_portal", "backend_target", "ui_system"],
+        "note": "Illustrates accommodation tariffs, client authentication flow, and planned backend target."
+      }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Delegates & Guests", "sublabel": "Mobile / Tablet / Desktop", "pos": [40, 260], "size": [130, 60] },
+    { "id": "hosting", "type": "cloud", "label": "Static Edge Host", "sublabel": "GitHub Pages / HTTPS", "pos": [250, 260], "size": [130, 60], "tag": "Static CDN" },
+    { "id": "spa_entry", "type": "frontend", "label": "React 18 Root", "sublabel": "index.js + HashRouter", "pos": [470, 260], "size": [130, 60] },
+    { "id": "core_views", "type": "frontend", "label": "Core Festival Views", "sublabel": "Home / About / Team / FAQ", "pos": [700, 140], "size": [140, 60] },
+    { "id": "events_engine", "type": "frontend", "label": "Cinematic Event Engine", "sublabel": "Events.jsx + Search Filter", "pos": [700, 260], "size": [140, 60], "tag": "Core Module" },
+    { "id": "tariff_system", "type": "frontend", "label": "Pricing & Logistics", "sublabel": "pricing-02 (₹50/₹125/₹175)", "pos": [700, 390], "size": [140, 60] },
+    { "id": "auth_portal", "type": "security", "label": "Auth & Delegate Reg", "sublabel": "auth-fuse.tsx + Register", "pos": [470, 390], "size": [130, 60], "tag": "Frontend Flow" },
+    { "id": "backend_target", "type": "backend", "label": "Participant API", "sublabel": "Target REST / DB", "pos": [250, 390], "size": [130, 60], "tag": "Planned Target" },
+    { "id": "motion_systems", "type": "frontend", "label": "Motion & Canvas", "sublabel": "HaloReel + RAF Ticker", "pos": [940, 140], "size": [140, 60] },
+    { "id": "events_data", "type": "database", "label": "29 Arena Dataset", "sublabel": "events.jsx (Single Source)", "pos": [940, 260], "size": [140, 60], "tag": "Polymorphic" },
+    { "id": "ui_system", "type": "frontend", "label": "Design System & UI", "sublabel": "Tailwind + Sass + Radix", "pos": [940, 390], "size": [140, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "ROXX TECHNORITI Client Runtime", "wraps": ["spa_entry", "core_views", "events_engine", "tariff_system", "auth_portal", "motion_systems", "events_data", "ui_system"] }
+  ],
+  "connections": [
+    { "id": "users-to-edge", "from": "users", "to": "hosting", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "edge-to-spa", "from": "hosting", "to": "spa_entry", "label": "bundle" },
+    { "id": "spa-to-views", "from": "spa_entry", "to": "core_views", "label": "#/ routes", "fromSide": "top", "toSide": "left" },
+    { "id": "spa-to-events", "from": "spa_entry", "to": "events_engine", "label": "#/events" },
+    { "id": "spa-to-tariffs", "from": "spa_entry", "to": "tariff_system", "label": "#/stay", "fromSide": "right", "toSide": "left" },
+    { "id": "spa-to-auth", "from": "spa_entry", "to": "auth_portal", "label": "#/signin", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "auth-to-backend", "from": "auth_portal", "to": "backend_target", "label": "sync API", "fromSide": "left", "toSide": "right", "variant": "dashed" },
+    { "id": "events-to-data", "from": "events_engine", "to": "events_data", "label": "29 arenas" },
+    { "id": "views-to-motion", "from": "core_views", "to": "motion_systems", "label": "HaloReel" },
+    { "id": "tariffs-to-ui", "from": "tariff_system", "to": "ui_system", "label": "pricing-02" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Client Delivery", "items": ["Static bundle served over HTTPS via edge CDN", "HashRouter client-side routing ensures 100% static host compatibility"] },
+    { "dot": "emerald", "title": "29 Arenas Data Architecture", "items": ["Single source of truth in events.jsx with 29 technical competitions across 6 categories", "Polymorphic adapters feed 3D HaloReel, CinematicList, and search filters without data duplication"] },
+    { "dot": "violet", "title": "Motion, UI & Logistics", "items": ["Frame-rate independent delta timing for 3-row infinite slider", "Integrated 21st.dev pricing-02 tariffs (₹50, ₹125, ₹175) and interactive HTML5 halftone wordmark"] },
+    { "dot": "rose", "title": "Authentication & Integrations", "items": ["auth-fuse dual background portal and registration flow (implemented frontend)", "Persistent participant database structured as a clean external target for festival operations"] }
+  ]
+}

@@ -1,0 +1,123 @@
+.about-page-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .official-notice-banner {
+    background: linear-gradient(135deg, rgba(29, 28, 28, 0.95), rgba(45, 20, 60, 0.9));
+    border: 1px solid rgba(190, 0, 215, 0.35);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+    .notice-title {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 8px;
+    }
+
+    .notice-dates {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .section-eyebrow {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+
+  .text-purple {
+    color: #BE00D7 !important;
+  }
+
+  .bg-purple-glow {
+    background-color: #BE00D7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(190, 0, 215, 0.5);
+  }
+
+  .bg-purple-subtle {
+    background-color: rgba(190, 0, 215, 0.15);
+    border: 1px solid rgba(190, 0, 215, 0.3);
+  }
+
+  .stats-box-grid {
+    background: rgba(29, 28, 28, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+
+      .stat-number {
+        color: #BE00D7;
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .patron-feature-card {
+    background: rgba(25, 24, 27, 0.85);
+    border: 1px solid rgba(190, 0, 215, 0.25);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: #BE00D7;
+      box-shadow: 0 12px 28px rgba(190, 0, 215, 0.2);
+    }
+
+    .patron-avatar {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      object-position: top;
+      border: 2px solid #BE00D7;
+      box-shadow: 0 0 15px rgba(190, 0, 215, 0.3);
+    }
+
+    .patron-avatar-sm {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      object-position: top;
+      border: 2px solid rgba(190, 0, 215, 0.6);
+    }
+
+    .patron-quote {
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+  }
+
+  .btn-purple {
+    background-color: #BE00D7;
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #9e00b2;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+  }
+}
