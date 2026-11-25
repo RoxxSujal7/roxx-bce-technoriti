@@ -59,6 +59,7 @@ const Footer = () => {
             <h4 className="footer-col-heading">Participant Desk</h4>
             <ul className="footer-links-list">
               <li><Link to="/register">Event Registration</Link></li>
+              <li><Link to="/dashboard">Delegate Dashboard</Link></li>
               <li><Link to="/signin">Participant Sign In</Link></li>
               <li><Link to="/signup">Create Account</Link></li>
               <li><Link to="/faq">Hospitality FAQs</Link></li>
@@ -73,38 +74,38 @@ const Footer = () => {
               <a
                 href="https://linkedin.com/in/bhagalpur-college-of-engineering-897354228"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="social-btn"
                 aria-label="LinkedIn"
               >
-                <BsLinkedin />
+                <BsLinkedin aria-hidden="true" />
               </a>
               <a
                 href="https://instagram.com/bcebhagalpur_official"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="social-btn"
                 aria-label="Instagram"
               >
-                <AiFillInstagram />
+                <AiFillInstagram aria-hidden="true" />
               </a>
               <a
                 href="https://twitter.com/bce_bhagalpur"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="social-btn"
                 aria-label="Twitter / X"
               >
-                <FaTwitter />
+                <FaTwitter aria-hidden="true" />
               </a>
               <a
                 href="https://www.youtube.com/@bcebhagalpurofficial"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="social-btn"
                 aria-label="YouTube"
               >
-                <AiFillYoutube />
+                <AiFillYoutube aria-hidden="true" />
               </a>
             </div>
 

@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.3.1",
+    "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-label": "^2.1.17",
+    "@radix-ui/react-progress": "^1.2.1",
     "@radix-ui/react-separator": "^1.2.0",
     "@radix-ui/react-slot": "^1.5.0",
+    "@radix-ui/react-tooltip": "^1.4.1",
+    "@supabase/supabase-js": "^2.119.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -15,6 +20,7 @@
     "framer-motion": "^11.0.0",
     "lucide-react": "^1.78.0",
     "motion": "^14.14.0",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-bootstrap": "^2.5.0",
     "react-device-detect": "^2.2.2",
@@ -22,6 +28,7 @@
     "react-icons": "^4.4.0",
     "react-router-dom": "^6.4.0",
     "react-scripts": "5.0.1",
+    "recharts": "^2.15.4",
     "sass": "^1.54.9",
     "tailwind-merge": "^3.7.1",
     "web-vitals": "^2.1.4"
@@ -39,6 +46,11 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^@radix-ui/primitive/is-development$": "<rootDir>/node_modules/@radix-ui/primitive/dist/internal/is-development.false.js"
+    }
   },
   "browserslist": {
     "production": [

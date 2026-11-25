@@ -9,6 +9,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import ButtonWithIcon from "./ButtonWithIcon";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabaseClient";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,6 +46,7 @@ export function Typewriter({
   useEffect(() => {
     if (!currentText) return;
 
+    let delayTimeout: ReturnType<typeof setTimeout> | undefined;
     const timeout = setTimeout(
       () => {
         if (!isDeleting) {
@@ -51,7 +54,7 @@ export function Typewriter({
             setDisplayText((prev) => prev + currentText[currentIndex]);
             setCurrentIndex((prev) => prev + 1);
           } else if (loop) {
-            setTimeout(() => setIsDeleting(true), delay);
+            delayTimeout = setTimeout(() => setIsDeleting(true), delay);
           }
         } else {
           if (displayText.length > 0) {
@@ -66,7 +69,10 @@ export function Typewriter({
       isDeleting ? deleteSpeed : speed,
     );
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      if (delayTimeout) clearTimeout(delayTimeout);
+    };
   }, [
     currentIndex,
     isDeleting,
@@ -186,24 +192,95 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 );
 PasswordInput.displayName = "PasswordInput";
 
-function SignInForm() {
-  const handleSignIn = (event: React.FormEvent<HTMLFormElement>) => {
+function getRedirectUrl() {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}/`;
+}
+
+function SignInForm({
+  onForgotPassword,
+  onSuccess,
+}: {
+  onForgotPassword: () => void;
+  onSuccess?: () => void;
+}) {
+  const { configured } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // UI-only: no backend authentication is wired. Form is a visual prototype.
-    // Do not log form data — credentials must never reach the browser console.
+    setErrorMsg(null);
+    if (!configured || !supabase) {
+      setErrorMsg("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (error) {
+        setErrorMsg(error.message || "Invalid login credentials.");
+        return;
+      }
+      onSuccess?.();
+    } catch {
+      setErrorMsg("Unable to sign in right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   return (
-    <form onSubmit={handleSignIn} autoComplete="on" className="flex flex-col gap-8">
+    <form onSubmit={handleSignIn} autoComplete="on" className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold text-white">Sign in to your account</h1>
         <p className="text-balance text-sm text-white/60">Enter your email below to sign in</p>
       </div>
+      {errorMsg && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {errorMsg}
+        </div>
+      )}
       <div className="grid gap-4">
-        <div className="grid gap-2"><Label htmlFor="email" className="text-white">Email</Label><Input id="email" name="email" type="email" placeholder="m@example.com" required autoComplete="email" /></div>
-        <PasswordInput name="password" label="Password" required autoComplete="current-password" placeholder="Password" />
-        <div className="mt-2 flex justify-center">
-          <ButtonWithIcon type="submit" className="w-full justify-between">
-            Sign In
+        <div className="grid gap-2">
+          <Label htmlFor="email" className="text-white">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="m@example.com"
+            required
+            autoComplete="email"
+          />
+        </div>
+        <PasswordInput
+          name="password"
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          placeholder="Password"
+        />
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="bg-transparent border-0 p-0 text-xs text-[#BE00D7] hover:text-[#e070ff] cursor-pointer"
+          >
+            Forgot password?
+          </button>
+        </div>
+        <div className="mt-1 flex justify-center">
+          <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
+            {submitting ? "Signing In..." : "Sign In"}
           </ButtonWithIcon>
         </div>
       </div>
@@ -212,24 +289,108 @@ function SignInForm() {
 }
 
 function SignUpForm() {
-  const handleSignUp = (event: React.FormEvent<HTMLFormElement>) => {
+  const { configured } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
+
+  const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // UI-only: no backend signup is wired. Form is a visual prototype.
-    // Do not log form data — credentials must never reach the browser console.
+    setErrorMsg(null);
+    setInfoMsg(null);
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!configured || !supabase) {
+      setErrorMsg("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { full_name: fullName.trim() },
+          emailRedirectTo: getRedirectUrl(),
+        },
+      });
+      if (error) {
+        setErrorMsg(error.message || "Registration failed.");
+        return;
+      }
+      if (data?.user && !data.session) {
+        setInfoMsg("Check your inbox and click the verification link before signing in.");
+      } else {
+        setInfoMsg("Account created and signed in.");
+      }
+    } catch {
+      setErrorMsg("Unable to create account right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   return (
-    <form onSubmit={handleSignUp} autoComplete="on" className="flex flex-col gap-8">
+    <form onSubmit={handleSignUp} autoComplete="on" className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold text-white">Create an account</h1>
         <p className="text-balance text-sm text-white/60">Enter your details below to sign up</p>
       </div>
+      {errorMsg && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {errorMsg}
+        </div>
+      )}
+      {infoMsg && (
+        <div role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 text-xs text-emerald-200">
+          {infoMsg}
+        </div>
+      )}
       <div className="grid gap-4">
-        <div className="grid gap-1"><Label htmlFor="name" className="text-white">Full Name</Label><Input id="name" name="name" type="text" placeholder="John Doe" required autoComplete="name" /></div>
-        <div className="grid gap-2"><Label htmlFor="email" className="text-white">Email</Label><Input id="email" name="email" type="email" placeholder="m@example.com" required autoComplete="email" /></div>
-        <PasswordInput name="password" label="Password" required autoComplete="new-password" placeholder="Password" />
+        <div className="grid gap-1">
+          <Label htmlFor="name" className="text-white">Full Name</Label>
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="John Doe"
+            required
+            autoComplete="name"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="email" className="text-white">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="m@example.com"
+            required
+            autoComplete="email"
+          />
+        </div>
+        <PasswordInput
+          name="password"
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="Password (min 8 chars)"
+        />
         <div className="mt-2 flex justify-center">
-          <ButtonWithIcon type="submit" className="w-full justify-between">
-            Sign Up
+          <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
+            {submitting ? "Creating Account..." : "Sign Up"}
           </ButtonWithIcon>
         </div>
       </div>
@@ -237,10 +398,212 @@ function SignUpForm() {
   );
 }
 
-function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle: () => void; }) {
+function RecoveryRequestForm({ onBack }: { onBack: () => void }) {
+  const { configured } = useAuth();
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleReset = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setStatusMsg(null);
+    if (!configured || !supabase) {
+      setErrorMsg("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: getRedirectUrl(),
+      });
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+      setStatusMsg("If an account exists for that email, a recovery link has been sent.");
+    } catch {
+      setErrorMsg("Could not initiate password recovery.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleReset} className="flex flex-col gap-5">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <h1 className="text-2xl font-bold text-white">Reset password</h1>
+        <p className="text-balance text-sm text-white/60">Enter your email for a recovery link</p>
+      </div>
+      {errorMsg && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {errorMsg}
+        </div>
+      )}
+      {statusMsg && (
+        <div role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 text-xs text-emerald-200">
+          {statusMsg}
+        </div>
+      )}
+      <div className="grid gap-2">
+        <Label htmlFor="recovery-email" className="text-white">Email</Label>
+        <Input
+          id="recovery-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="m@example.com"
+        />
+      </div>
+      <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
+        {submitting ? "Sending..." : "Send Recovery Link"}
+      </ButtonWithIcon>
+      <Button type="button" variant="link" onClick={onBack} className="mx-auto">
+        Back to Sign In
+      </Button>
+    </form>
+  );
+}
+
+function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
+  const { clearPasswordRecovery } = useAuth();
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (password.length < 8) {
+      setErrorMsg("New password must be at least 8 characters.");
+      return;
+    }
+    if (!supabase) {
+      setErrorMsg("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+      setStatusMsg("Password updated successfully.");
+      clearPasswordRecovery();
+      onDone();
+    } catch {
+      setErrorMsg("Unable to update password. Please request a new recovery link.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleUpdate} className="flex flex-col gap-5">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <h1 className="text-2xl font-bold text-white">Set new password</h1>
+        <p className="text-balance text-sm text-white/60">Choose a strong new password</p>
+      </div>
+      {errorMsg && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {errorMsg}
+        </div>
+      )}
+      {statusMsg && (
+        <div role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 text-xs text-emerald-200">
+          {statusMsg}
+        </div>
+      )}
+      <PasswordInput
+        name="new-password"
+        label="New Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        minLength={8}
+        autoComplete="new-password"
+        placeholder="Minimum 8 characters"
+      />
+      <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
+        {submitting ? "Updating..." : "Update Password"}
+      </ButtonWithIcon>
+    </form>
+  );
+}
+
+function AuthFormContainer({
+  isSignIn,
+  onToggle,
+  onBeforeOAuth,
+  onAuthSuccess,
+}: {
+  isSignIn: boolean;
+  onToggle: () => void;
+  onBeforeOAuth?: () => void;
+  onAuthSuccess?: () => void;
+}) {
+  const { configured, isPasswordRecovery } = useAuth();
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  useEffect(() => {
+    setShowRecovery(false);
+    setOauthError(null);
+  }, [isSignIn]);
+
+  const handleGoogleSignIn = async () => {
+    setOauthError(null);
+    if (!configured || !supabase) {
+      setOauthError("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    onBeforeOAuth?.();
+    setOauthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: getRedirectUrl(),
+        },
+      });
+      if (error) {
+        setOauthError(error.message || "Google sign-in unavailable.");
+        setOauthLoading(false);
+      }
+    } catch {
+      setOauthError("Unable to start Google OAuth flow.");
+      setOauthLoading(false);
+    }
+  };
+
+  if (isPasswordRecovery) {
+    return (
+      <div className="mx-auto grid w-[350px] gap-3">
+        <UpdatePasswordForm onDone={() => onAuthSuccess?.()} />
+      </div>
+    );
+  }
+
+  if (showRecovery) {
+    return (
+      <div className="mx-auto grid w-[350px] gap-3">
+        <RecoveryRequestForm onBack={() => setShowRecovery(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto grid w-[350px] gap-3">
-      {isSignIn ? <SignInForm /> : <SignUpForm />}
+      {isSignIn ? (
+        <SignInForm onForgotPassword={() => setShowRecovery(true)} onSuccess={onAuthSuccess} />
+      ) : (
+        <SignUpForm />
+      )}
       <div className="text-center text-sm text-white/70">
         {isSignIn ? "Don't have an account?" : "Already have an account?"}{" "}
         <Button variant="link" className="pl-1 text-[#BE00D7] hover:text-[#e070ff] font-semibold bg-transparent border-0 inline" onClick={onToggle}>
@@ -250,17 +613,23 @@ function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle
       <div className="relative text-center text-sm my-1 after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-white/15">
         <span className="relative z-10 bg-black px-3 text-xs uppercase tracking-wider text-white/50">Or continue with</span>
       </div>
+      {oauthError && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {oauthError}
+        </div>
+      )}
       <Button
         variant="outline"
         type="button"
-        onClick={() => { /* UI-only: Google OAuth not implemented */ }}
+        disabled={oauthLoading}
+        onClick={handleGoogleSignIn}
         className="w-full bg-[#111114] border-white/20 hover:border-white/40 hover:bg-white/5 text-white font-medium py-2.5 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt="Google icon" className="mr-2 h-4 w-4" />
-        <span className="text-white">Continue with Google</span>
+        <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt="" aria-hidden="true" className="mr-2 h-4 w-4" />
+        <span className="text-white">{oauthLoading ? "Redirecting to Google..." : "Continue with Google"}</span>
       </Button>
     </div>
-  )
+  );
 }
 
 interface AuthContentProps {
@@ -278,11 +647,14 @@ interface AuthUIProps {
   signInContent?: AuthContentProps;
   signUpContent?: AuthContentProps;
   initialIsSignIn?: boolean;
+  onToggleMode?: () => void;
+  onBeforeOAuth?: () => void;
+  onAuthSuccess?: () => void;
 }
 
 const defaultSignInContent = {
   image: {
-    src: "/static/media/technoriti-signin-background.webp",
+    src: "/technoriti-signin-background.webp",
     alt: "Technoriti '26 Sign In Showcase"
   },
   quote: {
@@ -293,7 +665,7 @@ const defaultSignInContent = {
 
 const defaultSignUpContent = {
   image: {
-    src: "/static/media/technoriti-signup-background.webp",
+    src: "/technoriti-signup-background.webp",
     alt: "Technoriti '26 Sign Up Showcase"
   },
   quote: {
@@ -302,14 +674,27 @@ const defaultSignUpContent = {
   }
 };
 
-export function AuthUI({ signInContent = {}, signUpContent = {}, initialIsSignIn = true }: AuthUIProps) {
+export function AuthUI({
+  signInContent = {},
+  signUpContent = {},
+  initialIsSignIn = true,
+  onToggleMode,
+  onBeforeOAuth,
+  onAuthSuccess,
+}: AuthUIProps) {
   const [isSignIn, setIsSignIn] = useState(initialIsSignIn);
 
   useEffect(() => {
     setIsSignIn(initialIsSignIn);
   }, [initialIsSignIn]);
 
-  const toggleForm = () => setIsSignIn((prev) => !prev);
+  const toggleForm = () => {
+    if (onToggleMode) {
+      onToggleMode();
+    } else {
+      setIsSignIn((prev) => !prev);
+    }
+  };
 
   const finalSignInContent = {
     image: { ...defaultSignInContent.image, ...signInContent.image },
@@ -321,6 +706,7 @@ export function AuthUI({ signInContent = {}, signUpContent = {}, initialIsSignIn
   };
 
   const currentContent = isSignIn ? finalSignInContent : finalSignUpContent;
+  const safeBgSrc = currentContent.image.src.replace(/"/g, "%22");
 
   return (
     <div className="w-full min-h-screen md:grid md:grid-cols-2">
@@ -331,13 +717,18 @@ export function AuthUI({ signInContent = {}, signUpContent = {}, initialIsSignIn
         }
       `}</style>
       <div className="flex min-h-screen items-center justify-center p-6 md:h-auto md:p-0 md:py-12">
-        <AuthFormContainer isSignIn={isSignIn} onToggle={toggleForm} />
+        <AuthFormContainer
+          isSignIn={isSignIn}
+          onToggle={toggleForm}
+          onBeforeOAuth={onBeforeOAuth}
+          onAuthSuccess={onAuthSuccess}
+        />
       </div>
 
       <div
         className="hidden md:block relative bg-cover bg-center transition-all duration-500 ease-in-out"
         style={{
-          backgroundImage: `url(${currentContent.image.src})`,
+          backgroundImage: `url("${safeBgSrc}")`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"

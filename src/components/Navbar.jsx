@@ -8,9 +8,12 @@ import { FaTwitter, FaYoutube } from "react-icons/fa";
 import { isMobile } from "react-device-detect";
 
 import logo from "../assets/synergy-nav.svg";
+import { useAuth } from "../context/AuthContext";
 
 const NavigationBar = () => {
     const [colorChange, setColorchange] = useState(false);
+    const { session, profile } = useAuth();
+    const isStaff = profile?.role && ["super_admin", "admin", "coordinator"].includes(profile.role);
 
     useEffect(() => {
         const changeNavbarColor = () => {
@@ -56,26 +59,28 @@ const NavigationBar = () => {
                             <Nav.Link href="#/" className="nav-item">Home</Nav.Link>
                             <Nav.Link href="#/events" className="nav-item">Events</Nav.Link>
                             <Nav.Link href="#/team" className="nav-item">Team</Nav.Link>
+                            {session && <Nav.Link href="#/dashboard" className="nav-item">Dashboard</Nav.Link>}
+                            {isStaff && <Nav.Link href="#/admin" className="nav-item" style={{ color: "#BE00D7" }}>Admin</Nav.Link>}
                         </Nav>
                         <div className="d-flex align-items-center">
                             <span className="nav-icons">
-                                <a href="https://twitter.com/bcebhagalpur" target="_blank" rel="noreferrer" title="Twitter / X">
-                                    <FaTwitter style={{ fontSize: "1.3em" }} className='navbar-social-icons' />
+                                <a href="https://twitter.com/bce_bhagalpur" target="_blank" rel="noopener noreferrer" title="Twitter / X" aria-label="Twitter / X">
+                                    <FaTwitter style={{ fontSize: "1.3em" }} className='navbar-social-icons' aria-hidden="true" />
                                 </a>
                             </span>
                             <span className="nav-icons">
-                                <a href="https://instagram.com/bcebhagalpur_official" target="_blank" rel="noreferrer" title="Instagram">
-                                    <BsInstagram style={{ fontSize: "1.3em" }} className='navbar-social-icons' />
+                                <a href="https://instagram.com/bcebhagalpur_official" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+                                    <BsInstagram style={{ fontSize: "1.3em" }} className='navbar-social-icons' aria-hidden="true" />
                                 </a>
                             </span>
                             <span className="nav-icons">
-                                <a href="https://linkedin.com/in/bhagalpur-college-of-engineering-897354228" target="_blank" rel="noreferrer" title="LinkedIn">
-                                    <BsLinkedin style={{ fontSize: "1.3em" }} className='navbar-social-icons' />
+                                <a href="https://linkedin.com/in/bhagalpur-college-of-engineering-897354228" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+                                    <BsLinkedin style={{ fontSize: "1.3em" }} className='navbar-social-icons' aria-hidden="true" />
                                 </a>
                             </span>
                             <span className="nav-icons">
-                                <a href="https://www.youtube.com/@bcebhagalpurofficial" target="_blank" rel="noreferrer" title="YouTube">
-                                    <FaYoutube style={{ fontSize: "1.3em" }} className='navbar-social-icons' />
+                                <a href="https://www.youtube.com/@bcebhagalpurofficial" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube">
+                                    <FaYoutube style={{ fontSize: "1.3em" }} className='navbar-social-icons' aria-hidden="true" />
                                 </a>
                             </span>
                         </div>

@@ -70,6 +70,8 @@ export interface HalftoneWordmarkFooterProps {
   height?: string
   /** Extra root class names. */
   className?: string
+  /** Optional HTML container tag so parent landmarks do not nest. Defaults to "footer". */
+  as?: "footer" | "div"
 }
 
 const PRESETS: { [K in HalftonePreset]: HalftonePalette } = {
@@ -197,6 +199,7 @@ export default function HalftoneWordmarkFooter({
   monoFamily = MONO_STACK,
   height = "560px",
   className = "",
+  as = "footer",
 }: HalftoneWordmarkFooterProps) {
   const colors = { ...(PRESETS[preset] || PRESETS.night), ...(palette || {}) }
   const rootRef = React.useRef(null as HTMLElement | null)
@@ -451,8 +454,10 @@ export default function HalftoneWordmarkFooter({
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  const ContainerTag = (as === "div" ? "div" : "footer") as React.ElementType
+
   return (
-    <footer
+    <ContainerTag
       ref={rootRef}
       className={"hwf-root " + className}
       style={
@@ -492,7 +497,7 @@ export default function HalftoneWordmarkFooter({
           </button>
         ) : null}
       </div>
-    </footer>
+    </ContainerTag>
   )
 }
 

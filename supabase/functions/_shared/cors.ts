@@ -1,0 +1,43 @@
+export const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+
+export function getAllowedOrigins(envVal?: string): string[] {
+  const raw = envVal ?? Deno.env.get("ALLOWED_ORIGINS") ?? "";
+  const configured = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return configured.length > 0 ? configured : DEFAULT_ALLOWED_ORIGINS;
+}
+
+export function buildCorsHeaders(
+  origin: string | null,
+  allowedOrigins: string[],
+): { headers: Record<string, string>; originAllowed: boolean } {
+  const baseHeaders: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-idempotency-key",
+    "Vary": "Origin",
+  };
+
+  if (!origin) {
+    // Non-browser API clients (curl, server tests) do not send Origin
+    return { headers: baseHeaders, originAllowed: true };
+  }
+
+  const normalized = origin.replace(/\/+$/, "");
+  const matched = allowedOrigins.some((allowed) => allowed.replace(/\/+$/, "") === normalized);
+  if (!matched) {
+    return { headers: baseHeaders, originAllowed: false };
+  }
+
+  return {
+    headers: {
+      ...baseHeaders,
+      "Access-Control-Allow-Origin": normalized,
+    },
+    originAllowed: true,
+  };
+}

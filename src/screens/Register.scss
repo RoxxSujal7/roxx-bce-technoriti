@@ -73,6 +73,11 @@
         border-color: rgba(190, 0, 215, 0.5);
       }
 
+      &:focus-within {
+        outline: 2px solid #BE00D7;
+        outline-offset: 2px;
+      }
+
       &.selected {
         border-color: #BE00D7;
         background: rgba(190, 0, 215, 0.1);
