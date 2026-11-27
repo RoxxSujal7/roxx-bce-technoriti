@@ -1,150 +1,145 @@
 # ROXX TECHNORITI
 
-> **Official web application for TECHNORITI '26 — the annual technical festival of Bihar College of Engineering, Bhagalpur (BCE Bhagalpur).**
+> **Official web application for TECHNORITI '26 — the annual technical festival of Bhagalpur College of Engineering, Bhagalpur (BCE Bhagalpur).**
 > **Project Owner & Sole Contributor:** Sujal Kumar
 
 ---
 
 ## 1. Project Overview
 
-**ROXX TECHNORITI** is the digital platform powering **TECHNORITI '26**, the flagship technical festival of Bihar College of Engineering, Bhagalpur (BCE Bhagalpur). The platform delivers a high-performance web experience for delegates, participants, faculty patrons, and guests.
-
-Engineered from the ground up to replace legacy event websites, ROXX TECHNORITI combines modern React 18 architecture, TypeScript safety, Tailwind CSS utility design, Sass styling, and motion mathematics to deliver a seamless event experience across all form factors.
+**ROXX TECHNORITI** is the full-stack web platform powering **TECHNORITI '26**, the flagship technical festival of Bhagalpur College of Engineering, Bhagalpur (BCE Bhagalpur). Built with React 18, TypeScript, Tailwind CSS, Sass, Bootstrap 5, and Supabase (PostgreSQL + Edge Functions), it serves delegates, coordinators, faculty patrons, and festival administrators across mobile and desktop viewports.
 
 ---
 
 ## 2. Key Features
 
-- **Interactive 3D Halo Reel:** An elliptical 3D rotation carousel on the homepage displaying featured arenas with mouse-drag, touch-drag, and wheel physics. Synchronized with an active arena title readout.
-- **Continuous 3-Row Topic Slider:** A frame-rate-independent ticker powered by `requestAnimationFrame`, featuring seamless wrap-around loop mathematics, multi-directional flow, pause-on-hover ergonomics, and `prefers-reduced-motion` compliance.
-- **29 Competition Arenas Dataset:** Comprehensive single-source-of-truth dataset covering 29 official competitions across 6 engineering and technology domains with complete rules, eligibility, fee structures, prize pools, venues, and student coordinator contact information.
-- **Cinematic Event Explorer:** Real-time text search and category-filtered interface for browsing competitions, accompanied by modal detail sheets and registration links.
-- **Accommodation & Mess Tariff System:** Integrated 21st.dev `pricing-02` component featuring verified tariffs (₹50 Lodging, ₹125 Mess, ₹175 Complete Stay), animated conic-gradient rotating borders, a Lucide Flame `RECOMMENDED` badge, institutional guidelines, and direct booking CTAs.
-- **Full-Screen Interactive Halftone Wordmark:** High-performance HTML5 Canvas footer rendering mathematical dot matrices that react dynamically to cursor proximity with repulsive physics.
-- **Dual Authentication Portal:** An interactive auth portal (`auth-fuse.tsx`) with state-driven visual background switching between Sign In and Sign Up modes.
-- **Standardized Cinematic FAQ System:** Unified FAQ and participant policy accordions deployed across both the homepage and dedicated FAQ page.
-- **Zero-Overflow Responsive Layout:** Verified cross-device responsiveness across 375px mobile, 768px tablet, 1280px laptop, 1440px desktop, and 1920px ultrawide displays with 0px horizontal overflow.
+- **4-Step Delegate Registration Wizard (`#/register`):** Animated multistep form (`Delegate Info → Arenas → Stay & Mess → Review & Pay`) powered by Framer Motion and `@shadcn/react/questionnaire`, including a 38-college Bihar Government Engineering Colleges selector (`src/content/colleges.jsx`) with dynamic `"Other"` input, live fee calculation, and UPI payment / UTR verification.
+- **Interactive 3D Halo Reel:** Elliptical 3D rotation carousel on the homepage displaying featured arenas with mouse-drag, touch-drag, wheel physics, and synchronized mobile title readout.
+- **Continuous 3-Row Topic Slider:** Frame-rate-independent `requestAnimationFrame` ticker with seamless wrap-around loop, pause-on-hover, and `prefers-reduced-motion` support.
+- **29 Competition Arenas Dataset:** Single source of truth in `src/content/events.jsx` covering 29 competitions across 5 categories with rules, eligibility, fees, prize pools, venues, and coordinator contacts.
+- **Cinematic Event Explorer (`#/events`):** Real-time search, category filtering, expandable detail rows (`CinematicList`), and curved perspective viewer (`CurvedLensCarousel`).
+- **Accommodation & Mess Tariff System (`#/accommodation`):** 3-tier tariff cards (`pricing-02.tsx`) for ₹50 Lodging, ₹125 Mess, and ₹175 Complete Stay with direct registration CTAs.
+- **Full-Width Interactive Halftone Wordmark (`Footer.jsx`):** HTML5 Canvas footer rendering reactive dot matrices alongside BCE Bhagalpur institutional links.
+- **Delegate & Admin Portals (`#/signin`, `#/signup`, `#/dashboard`, `#/admin-login`, `#/admin`):** Supabase-backed authentication (`auth-fuse.tsx` and `neural-access-login.tsx`), delegate registration dashboard, and MFA-hardened RBAC admin dashboard (`super_admin`, `admin`, `coordinator`) with UTR verification and competition management.
 
 ---
 
 ## 3. Technology Stack
 
-Verified against `package.json`:
-
 | Category | Technologies |
 | :--- | :--- |
 | **Core Framework** | React `18.2.0`, React DOM `18.2.0`, Create React App (`react-scripts` `5.0.1`) |
-| **Language & Typings** | TypeScript (`tsconfig.json`), JavaScript ES2022 |
-| **Styling & Design System** | Tailwind CSS, Sass (`sass` `1.54.9`), Bootstrap `5.2.1`, `react-bootstrap` `2.5.0` |
-| **Component Primitives** | Radix UI (`@radix-ui/react-label`, `@radix-ui/react-separator`, `@radix-ui/react-slot`), `class-variance-authority`, `clsx`, `tailwind-merge` |
-| **Animation & Motion** | Framer Motion (`11.0.0`), Motion (`14.14.0`), CSS Keyframes, Canvas 2D API |
-| **Iconography** | Lucide React (`1.78.0`), React Icons (`4.4.0`) |
-| **Routing & Client State** | React Router DOM (`6.4.0`) with `HashRouter` |
-| **Device & Viewport** | `react-device-detect` (`2.2.2`), CSS Clamping & Viewport Units |
-| **Testing & Quality** | `@testing-library/react` (`13.4.0`), `@testing-library/jest-dom` (`5.16.5`), `@testing-library/user-event` (`13.5.0`) |
+| **Language & Typings** | TypeScript (`4.9.5`), JavaScript ES2022 |
+| **Styling & UI Primitives** | Tailwind CSS (`3.1.8`), Sass (`1.54.9`), Bootstrap `5.2.1`, `react-bootstrap` `2.5.0`, `@shadcn/react` `0.3.1`, Radix UI |
+| **Animation & Visualization** | Framer Motion (`11.0.0`), Motion (`14.14.0`), Recharts (`2.15.4`), Canvas 2D API |
+| **Icons & Utilities** | Lucide React (`1.78.0`), React Icons (`4.4.0`), `clsx`, `tailwind-merge`, `class-variance-authority`, `qrcode` |
+| **Routing** | React Router DOM (`6.4.0`) with `HashRouter` and lazy-loaded route chunks |
+| **Backend & Security** | Supabase (`@supabase/supabase-js` `2.119.2`), PostgreSQL RLS migrations, Deno Edge Functions |
+| **Hosting** | Vercel (`vercel.json` with `create-react-app` preset, CSP & cache headers) |
 
 ---
 
 ## 4. Application Routes
 
-ROXX TECHNORITI uses `HashRouter` from `react-router-dom` to support static hosting without server-side route rewrite dependencies:
+ROXX TECHNORITI uses `HashRouter` (`src/index.js`) with lazy-loaded screen chunks:
 
 | Route Path | View / Screen | Purpose & Content |
 | :--- | :--- | :--- |
 | `#/` | `App.jsx` | Homepage: Title Jumbotron, 3-Row Topic Slider, 3D Halo Reel, About Us, FAQ, Halftone Wordmark Footer |
-| `#/events` | `Events.jsx` | All 29 Competition Arenas, real-time search, category pill filter, Cinematic List |
-| `#/accommodation` | `Accommodation.jsx` | 3-Card Tariff Section (₹50, ₹125, ₹175), campus stay guidelines, helplines, FAQ |
+| `#/events` | `Events.jsx` | All 29 Competition Arenas, real-time search, category filters, `CinematicList` |
+| `#/accommodation` | `Accommodation.jsx` | 3-card tariff section (₹50, ₹125, ₹175), campus stay guidelines, helplines, FAQ |
 | `#/about` | `About.jsx` | BCE Bhagalpur institutional legacy, festival vision, objectives, campus location |
 | `#/team` | `Team.jsx` | Patron faculty, organizing committee, student convenors, developer attribution |
 | `#/sponsors` | `Sponsors.jsx` | Corporate partners, past sponsors, partnership tier details |
-| `#/faq` | `FaqPage.jsx` | Full institutional FAQ accordion with 12 structured delegate questions |
+| `#/faq` | `FaqPage.jsx` | Full institutional FAQ accordion |
 | `#/contact` | `Contact.jsx` | Campus desk coordinates, email addresses, emergency helplines, campus map |
-| `#/register` | `Register.jsx` | Registration workflow, event selection, team member details, fee calculator |
-| `#/signin` | `Auth.jsx` | Sign In authentication portal with interactive `auth-fuse` background |
-| `#/signup` | `Auth.jsx` | Sign Up authentication portal with registration flow |
+| `#/policies` | `Legal.jsx` | Privacy policy, terms, and festival participation guidelines |
+| `#/register` | `Register.jsx` | 4-step delegate registration wizard, Bihar college selector, fee summary, UPI/UTR submission |
+| `#/signin` | `Auth.jsx` | Delegate sign-in portal with interactive `auth-fuse` background |
+| `#/signup` | `Auth.jsx` | Delegate sign-up portal |
+| `#/dashboard` | `Dashboard.jsx` | Authenticated delegate dashboard displaying registration & payment status |
+| `#/admin-login` | `AdminLogin.jsx` | Staff/admin sign-in portal (`neural-access-login`) with MFA support |
+| `#/admin` | `Admin.jsx` | RBAC admin console (`App-1`) for registrations, UTR verification, competitions, and admin roles |
 
 ---
 
 ## 5. Project Directory Structure
 
 ```text
-roxx-technoriti/
+roxx-bce-technoriti/
 ├── public/
-│   ├── favicon.ico
-│   ├── index.html
+│   ├── favicon.svg
+│   ├── index.html                      # Google Fonts (Limelight, Inter, Poppins, Monoton, Space Mono) & SEO meta
 │   ├── manifest.json
-│   ├── rect55.png                      # Event arena fallback graphic
 │   └── robots.txt
 ├── src/
-│   ├── assets/
-│   │   ├── patrons/                    # Faculty patron portraits
-│   │   ├── synergy-nav.svg             # Navbar vector mark
-│   │   ├── technoriti-logo.svg         # Technoriti vector branding
-│   │   └── technoriti-wordmark.png     # Static footer wordmark
+│   ├── assets/                         # Logos, wordmarks, patron portraits, arena graphics
 │   ├── components/
 │   │   ├── ui/
+│   │   │   ├── app-1.tsx               # Admin dashboard shell & sidebar
 │   │   │   ├── auth-fuse.tsx           # Dual-background authentication portal
-│   │   │   ├── badge.tsx               # Status badge component
-│   │   │   ├── button.tsx              # Button primitive
+│   │   │   ├── badge.tsx / button.tsx / card.tsx / separator.tsx
 │   │   │   ├── ButtonWithIcon.tsx      # Branded CTA button with icon
-│   │   │   ├── card.tsx                # Card container primitive
 │   │   │   ├── halftone-wordmark-footer.tsx # Interactive 100vw canvas footer
-│   │   │   ├── pricing-02.tsx          # 3-tier tariff cards with conic borders
-│   │   │   └── separator.tsx           # Structural divider
-│   │   ├── Card.jsx                    # Legacy card wrapper
-│   │   ├── CinematicList.jsx           # Cinema-grade event list with search
+│   │   │   ├── neural-access-login.tsx # Admin login portal UI
+│   │   │   ├── pricing-02.tsx          # 3-tier accommodation tariff cards
+│   │   │   └── questionnaire.tsx       # @shadcn/react/questionnaire wrapper
+│   │   ├── CinematicList.jsx           # Searchable expandable arena accordion
 │   │   ├── CurvedLensCarousel.jsx      # Curved perspective lens carousel
 │   │   ├── Faq.jsx                     # Homepage FAQ accordion
 │   │   ├── Footer.jsx                  # Two-tier footer (editorial + halftone)
 │   │   ├── HaloReel.jsx                # 3D elliptical card ring showcase
 │   │   ├── Navbar.jsx                  # Navigation header with scroll listener
-│   │   ├── One_faq_question.jsx        # FAQ single item primitive
-│   │   ├── One_faq_question_home.jsx   # Homepage FAQ single item
 │   │   ├── slider_section.jsx          # Continuous 3-row topic ticker
 │   │   └── Title_Jumbotron.jsx         # Hero title jumbotron
 │   ├── content/
 │   │   ├── about_us.jsx                # Institutional editorial copy
+│   │   ├── colleges.jsx                # 38 Bihar govt engineering colleges + OTHER_COLLEGE
 │   │   ├── events.jsx                  # Single source of truth for 29 competitions
 │   │   ├── faq.jsx                     # FAQ question/answer dataset
 │   │   ├── slider_texts.jsx            # 3-row slider text content
 │   │   ├── subtitle_texts.jsx          # Subtitle strings
 │   │   ├── teams.jsx                   # Organizing committee dataset
 │   │   └── timeline_data.jsx           # Festival schedule & timeline data
+│   ├── context/
+│   │   └── AuthContext.jsx             # Supabase auth session, profile & redirect handling
 │   ├── lib/
-│   │   ├── utils.js                    # Utility helpers (cn class merger)
-│   │   └── utils.ts                    # TypeScript utility exports
+│   │   ├── supabaseClient.js           # Supabase client initialization
+│   │   ├── utils.js                    # JS utility helpers
+│   │   └── utils.ts                    # TypeScript cn() class-merging helper
 │   ├── screens/
-│   │   ├── About.jsx                   # About BCE Bhagalpur page
-│   │   ├── Accommodation.jsx           # Accommodation & tariff page
-│   │   ├── Auth.jsx                    # Sign in & sign up gateway
-│   │   ├── Comingsoon.jsx              # Coming soon placeholder
-│   │   ├── Contact.jsx                 # Contact & location page
-│   │   ├── Events.jsx                  # Events explorer page
-│   │   ├── FaqPage.jsx                 # Dedicated FAQ page
-│   │   ├── Register.jsx                # Multi-step delegate registration
-│   │   ├── Sponsors.jsx                # Sponsors & partner showcase
-│   │   └── Team.jsx                    # Organizing team roster
-│   ├── App.jsx                         # Main homepage application component
+│   │   ├── About.jsx / Accommodation.jsx / Contact.jsx / Events.jsx / FaqPage.jsx / Legal.jsx / Sponsors.jsx / Team.jsx
+│   │   ├── Admin.jsx / AdminLogin.jsx / Auth.jsx / Dashboard.jsx / Register.jsx
+│   ├── App.jsx                         # Homepage application component
 │   ├── App.scss                        # Root application stylesheet
-│   ├── index.js                        # React 18 root mounting & HashRouter
-│   └── tailwind.css                    # Tailwind utility directives
-├── docs/                               # Engineering documentation & audits
+│   ├── index.js                        # React 18 root mounting, HashRouter & lazy routes
+│   ├── index.scss                      # Global base & skip-link styles
+│   └── tailwind.css                    # Tailwind directives & theme CSS variables
+├── supabase/
+│   ├── config.toml
+│   ├── functions/                      # Edge Functions (create-registration, verify-payment, admin/coordinator APIs)
+│   ├── migrations/                     # PostgreSQL schema, RLS, and MFA hardening migrations
+│   ├── scripts/                        # Strict MFA helper SQL
+│   └── tests/                          # Deno edge security tests
+├── docs/                               # Engineering, UI, and security audit reports
+├── .env.example                        # Public frontend & server env var template
 ├── package.json
 ├── tailwind.config.js
-└── tsconfig.json
+├── tsconfig.json
+└── vercel.json                         # Vercel build, installCommand, CSP & cache headers
 ```
 
 ---
 
 ## 6. Competition Data Architecture (All 29 Arenas)
 
-All competition data is centralized in [`src/content/events.jsx`](file:///c:/Users/sujal/syn/src/content/events.jsx). The file provides four polymorphic data exports that serve different UI components:
+All competition data is centralized in [src/content/events.jsx](src/content/events.jsx), providing five exports:
 
-1. `competitionsList`: The canonical array of all 29 arena objects with full metadata (prizes, rules, FAQs, fees, venues, student coordinators).
-2. `getHaloReelItems()`: Formatted for the 3D `HaloReel` elliptical rotation card ring.
-3. `getCinematicItems()`: Formatted for the `CinematicList` expandable arena accordion with search.
-4. `getLensSlides()`: Formatted for the `CurvedLensCarousel` 3D perspective viewer.
-5. `default eventmap`: Normalized dictionary keyed by event slug for instant lookups.
+1. `competitionsList`: Canonical array of all 29 arena objects (prizes, rules, FAQs, fees, venues, coordinators).
+2. `getHaloReelItems()`: Formatted for the 3D `HaloReel` elliptical card ring.
+3. `getCinematicItems()`: Formatted for the `CinematicList` expandable accordion.
+4. `getLensSlides()`: Formatted for the `CurvedLensCarousel` viewer.
+5. `default eventmap`: Slug-keyed dictionary for instant lookups.
 
 ### Official 29 Competitions Roster
 
@@ -186,28 +181,39 @@ All competition data is centralized in [`src/content/events.jsx`](file:///c:/Use
 
 ### Prerequisites
 
-- **Node.js:** v16.x or higher (Node 18 LTS recommended)
-- **Package Manager:** npm v8.x or higher
+- **Node.js:** v18 LTS or higher
+- **Package Manager:** npm v8+
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone <configured-git-remote-url>
-cd roxx-technoriti
+> `@shadcn/react` declares a React `>=19` peer dependency while this project runs React `18.2.0`, so install with `--legacy-peer-deps`.
 
-# Install dependencies
-npm install
+```bash
+git clone https://github.com/RoxxSujal7/roxx-bce-technoriti.git
+cd roxx-bce-technoriti
+npm install --legacy-peer-deps
 ```
+
+### Environment Variables
+
+Copy `.env.example` to `.env.local` for local development:
+
+```env
+REACT_APP_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
+REACT_APP_UPI_VPA=bcebhagalpur@upi
+REACT_APP_UPI_PAYEE_NAME=Technoriti 2026 BCE
+```
+
+Never place `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, or other server secrets in `REACT_APP_*` variables; configure those only via `supabase secrets set`.
 
 ### Running Locally
 
 ```bash
-# Start local development server
 npm start
 ```
 
-The application will launch on `http://localhost:3000/#/`.
+The application opens at `http://localhost:3000/#/`.
 
 ---
 
@@ -220,20 +226,36 @@ npx tsc --noEmit
 # Trailing whitespace and formatting check
 git diff --check
 
-# Production build bundle
+# Production build bundle (CI=true mirrors Vercel)
 npm run build
 
-# Run unit and integration tests
+# Run unit and security tests
 npm test -- --watchAll=false
 ```
 
 ---
 
-## 9. Ownership, Identity & Credits
+## 9. Deploying to Vercel
+
+This repository includes [vercel.json](vercel.json) preconfigured for Create React App:
+
+- **`installCommand`:** `npm install --legacy-peer-deps`
+- **`buildCommand`:** `npm run build`
+- **`outputDirectory`:** `build`
+- **Security & Cache Headers:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`, `Content-Security-Policy`, immutable `/static/*` caching, and `no-store` on `/index.html`.
+
+Before deploying on Vercel:
+
+1. Import the `RoxxSujal7/roxx-bce-technoriti` repository in Vercel.
+2. Add the public `REACT_APP_*` variables from `.env.example` in **Project Settings → Environment Variables**.
+3. Add your Vercel deployment URL to `ALLOWED_ORIGINS` in your Supabase Edge Function secrets.
+
+---
+
+## 10. Ownership, Identity & Credits
 
 - **Project Name:** ROXX TECHNORITI
 - **Festival Represented:** TECHNORITI '26
-- **Hosting Institution:** Bihar College of Engineering, Bhagalpur (BCE Bhagalpur)
+- **Hosting Institution:** Bhagalpur College of Engineering, Bhagalpur (BCE Bhagalpur)
 - **Project Owner & Sole Contributor:** **Sujal Kumar**
-- **Architecture & Engineering:** Designed, transformed, refactored, and maintained independently by Sujal Kumar.
 - **License:** Proprietary / All rights reserved by Sujal Kumar and BCE Bhagalpur for TECHNORITI '26.
