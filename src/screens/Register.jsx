@@ -1,10 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Modal, Badge } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
 import QRCode from 'qrcode';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 import { competitionsList } from '../content/events';
-import ButtonWithIcon from '../components/ui/ButtonWithIcon';
+import { biharEngineeringColleges, OTHER_COLLEGE } from '../content/colleges';
+import { cn } from '../lib/utils';
+import {
+  Questionnaire,
+  QuestionnaireChoice,
+  QuestionnaireChoiceDescription,
+  QuestionnaireChoices,
+  QuestionnaireDescription,
+  QuestionnaireError,
+  QuestionnaireInput,
+  QuestionnaireItem,
+  QuestionnaireTitle,
+} from '../components/ui/questionnaire';
 import { useAuth } from '../context/AuthContext';
 import { callEdgeFunction, isSupabaseConfigured, supabase, UPI_CONFIG } from '../lib/supabaseClient';
 import './Register.scss';
@@ -52,30 +66,56 @@ function getArenaCost(comp, teamMembersCount) {
   return 50;
 }
 
+const VALID_ACCOM_PLANS = new Set(['none', 'lodging', 'mess', 'both']);
+
+const STEPS = [
+  { id: 'delegate', title: 'Delegate Info' },
+  { id: 'arenas', title: 'Arenas' },
+  { id: 'accommodation', title: 'Stay & Mess' },
+  { id: 'review', title: 'Review & Pay' },
+];
+
+const contentVariants = {
+  hidden: { opacity: 0, x: 32 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.25 } },
+  exit: { opacity: 0, x: -32, transition: { duration: 0.18 } },
+};
+
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { configured, session, profile, refreshProfile } = useAuth();
 
   const [catalog, setCatalog] = useState(competitionsList);
   const [accomRates, setAccomRates] = useState({ none: 0, lodging: 50, mess: 125, both: 175 });
+  const [catalogWarning, setCatalogWarning] = useState('');
 
-  // Form State
+  // Form State (supports ?arena=...&plan=... deep links)
+  const initialQuery = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const requestedArena = initialQuery.get('arena') || '';
+  const requestedPlan = initialQuery.get('plan') || '';
+
   const [formData, setFormData] = useState({
     fullName: '',
     rollNumber: '',
     phone: '',
     college: '',
     branch: '',
-    primaryArena: competitionsList[0]?.id || 'robowar',
+    primaryArena: competitionsList.some((c) => c.id === requestedArena)
+      ? requestedArena
+      : (competitionsList[0]?.id || 'robowar'),
     teamSize: '1',
     additionalArenas: [],
-    accommodation: 'none', // 'none' | 'lodging' | 'mess' | 'both'
+    accommodation: VALID_ACCOM_PLANS.has(requestedPlan) ? requestedPlan : 'none',
   });
 
+  const [currentStep, setCurrentStep] = useState(0);
   const [additionalSelection, setAdditionalSelection] = useState('');
+  const [isOtherCollege, setIsOtherCollege] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [clipboardError, setClipboardError] = useState('');
 
   // Server integration state
   const [creatingReg, setCreatingReg] = useState(false);
@@ -87,6 +127,7 @@ const Register = () => {
   const [submittedPayment, setSubmittedPayment] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const copyTimeoutRef = useRef(null);
+  const idempotencyKeyRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -97,6 +138,9 @@ const Register = () => {
   // Pre-fill profile fields if authenticated
   useEffect(() => {
     if (!profile) return;
+    if (profile.college && !biharEngineeringColleges.includes(profile.college)) {
+      setIsOtherCollege(true);
+    }
     setFormData((prev) => ({
       ...prev,
       fullName: prev.fullName || profile.full_name || '',
@@ -116,6 +160,9 @@ const Register = () => {
       supabase.from('accommodation_plans').select('id, price_per_person_inr, is_active').eq('is_active', true),
     ]).then(([cRes, aRes]) => {
       if (!mounted) return;
+      if (cRes.error || aRes.error) {
+        setCatalogWarning('Live catalog sync unavailable; showing bundled rates. Server-side checkout totals remain authoritative.');
+      }
       if (Array.isArray(cRes.data) && cRes.data.length > 0) {
         const dbById = new Map(cRes.data.map((r) => [r.id, r]));
         const nextCatalog = competitionsList
@@ -154,7 +201,11 @@ const Register = () => {
         }
         setAccomRates(nextRates);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      if (mounted) {
+        setCatalogWarning('Live catalog sync unavailable; showing bundled rates. Server-side checkout totals remain authoritative.');
+      }
+    });
     return () => {
       mounted = false;
     };
@@ -185,17 +236,22 @@ const Register = () => {
   const previewTotal = primaryCost + additionalCost + accomCost;
 
   const authoritativeTotal = serverRegistration ? Number(serverRegistration.computed_total_inr) : previewTotal;
-  const officialVpa = upiPaymentInfo?.vpa || UPI_CONFIG.vpa;
+  const isUpiConfigured = Boolean(upiPaymentInfo?.configured && upiPaymentInfo?.vpa);
+  const officialVpa = isUpiConfigured ? upiPaymentInfo.vpa : '';
   const officialPayeeName = upiPaymentInfo?.payee_name || UPI_CONFIG.payeeName;
   const passRef = serverRegistration?.pass_code || 'TR26-PREVIEW';
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(officialVpa)}&pn=${encodeURIComponent(officialPayeeName)}&am=${authoritativeTotal}&cu=INR&tn=${encodeURIComponent(passRef)}`;
+  const upiUrl = isUpiConfigured
+    ? `upi://pay?pa=${encodeURIComponent(officialVpa)}&pn=${encodeURIComponent(officialPayeeName)}&am=${authoritativeTotal}&cu=INR&tn=${encodeURIComponent(passRef)}`
+    : '';
 
-  // Generate QR locally in-browser (no PII sent to external QR generators)
+  // Generate QR locally in-browser only when an authoritative server VPA is configured
   useEffect(() => {
-    if (!showCheckoutModal || !upiUrl) return;
+    if (!showCheckoutModal || !upiUrl) {
+      setQrDataUrl('');
+      return;
+    }
     let active = true;
-    const safeQrPayload = `upi://pay?pa=${encodeURIComponent(officialVpa)}&pn=${encodeURIComponent(officialPayeeName)}&am=${authoritativeTotal}&cu=INR&tn=${encodeURIComponent(passRef)}`;
-    QRCode.toDataURL(safeQrPayload, { width: 200, margin: 2 })
+    QRCode.toDataURL(upiUrl, { width: 200, margin: 2 })
       .then((url) => {
         if (active) setQrDataUrl(url);
       })
@@ -205,7 +261,7 @@ const Register = () => {
     return () => {
       active = false;
     };
-  }, [showCheckoutModal, upiUrl, officialVpa, officialPayeeName, authoritativeTotal, passRef]);
+  }, [showCheckoutModal, upiUrl]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -234,6 +290,41 @@ const Register = () => {
     });
   };
 
+  const handleFieldChange = (name, value) => {
+    handleChange({ target: { name, value } });
+  };
+
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          formData.fullName.trim().length >= 2 &&
+          formData.rollNumber.trim().length >= 2 &&
+          /^\d{10}$/.test(formData.phone) &&
+          formData.college.trim().length >= 2 &&
+          formData.branch.trim().length >= 2
+        );
+      case 1:
+        return Boolean(formData.primaryArena) && parsedTeamSize >= teamRange.min;
+      case 2:
+        return VALID_ACCOM_PLANS.has(formData.accommodation);
+      default:
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (currentStep < STEPS.length - 1 && isStepValid()) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  };
+
   const handleAddArena = () => {
     if (
       additionalSelection &&
@@ -255,10 +346,30 @@ const Register = () => {
     }));
   };
 
+  // Invalidate idempotency key whenever form registration details change
+  const regPayloadKey = JSON.stringify([
+    formData.fullName.trim(),
+    formData.rollNumber.trim(),
+    formData.phone.replace(/\D/g, ''),
+    formData.college.trim(),
+    formData.branch.trim(),
+    formData.primaryArena,
+    parsedTeamSize,
+    formData.additionalArenas,
+    formData.accommodation,
+  ]);
+  const lastPayloadKeyRef = useRef(regPayloadKey);
+  if (lastPayloadKeyRef.current !== regPayloadKey) {
+    lastPayloadKeyRef.current = regPayloadKey;
+    idempotencyKeyRef.current = null;
+  }
+
   const handleOpenGateway = async (e) => {
     e.preventDefault();
+    if (creatingReg) return;
     setFormError('');
     setModalError('');
+    setClipboardError('');
 
     const cleanPhone = formData.phone.replace(/\D/g, '');
     if (cleanPhone.length !== 10) {
@@ -278,10 +389,12 @@ const Register = () => {
 
     setCreatingReg(true);
     try {
-      const idempotencyKey =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : `reg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `reg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      }
 
       const result = await callEdgeFunction('create-registration', {
         method: 'POST',
@@ -295,7 +408,7 @@ const Register = () => {
           team_size: parsedTeamSize,
           additional_arena_ids: formData.additionalArenas,
           accommodation_id: formData.accommodation,
-          idempotency_key: idempotencyKey,
+          idempotency_key: idempotencyKeyRef.current,
         },
       });
 
@@ -312,13 +425,20 @@ const Register = () => {
     }
   };
 
-  const handleCopyUpi = () => {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(officialVpa).catch(() => {});
+  const handleCopyUpi = async () => {
+    if (!officialVpa) return;
+    setClipboardError('');
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable');
+      }
+      await navigator.clipboard.writeText(officialVpa);
+      setCopiedUpi(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopiedUpi(false), 2000);
+    } catch {
+      setClipboardError(`Copy failed — please enter UPI VPA manually: ${officialVpa}`);
     }
-    setCopiedUpi(true);
-    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-    copyTimeoutRef.current = setTimeout(() => setCopiedUpi(false), 2000);
   };
 
   const handleFinalVerify = async (e) => {
@@ -361,7 +481,7 @@ const Register = () => {
 
   return (
     <div className="register-page-wrapper">
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="FESTIVAL"
         bigHeaderCaps="REGISTRATION"
         subtitle="SLOT BOOKING FOR 29 ARENAS & CAMPUS ACCOMMODATION • 6–7 JAN 2027"
@@ -396,275 +516,473 @@ const Register = () => {
                 </div>
               )}
 
-              <Form onSubmit={handleOpenGateway}>
-                {/* 1. Delegate Personal Details */}
-                <h5 className="section-divider-title text-purple mb-3">01 // Delegate Information</h5>
-                <Row className="gy-3 mb-4">
-                  <Col md={6}>
-                    <Form.Group controlId="reg-full-name">
-                      <Form.Label className="text-white small">Full Name *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        required
-                        minLength={2}
-                        maxLength={120}
-                        placeholder="e.g. Sujal Kumar"
-                        className="dark-input"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group controlId="reg-roll-number">
-                      <Form.Label className="text-white small">University / College Roll Number *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="rollNumber"
-                        value={formData.rollNumber}
-                        onChange={handleChange}
-                        required
-                        minLength={2}
-                        maxLength={40}
-                        placeholder="e.g. 24103123001"
-                        className="dark-input"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group controlId="reg-phone">
-                      <Form.Label className="text-white small">WhatsApp / Contact Phone * (10 Digits)</Form.Label>
-                      <Form.Control
-                        type="tel"
-                        name="phone"
-                        inputMode="numeric"
-                        pattern="\d{10}"
-                        maxLength={10}
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                        placeholder="e.g. 9876543210"
-                        className="dark-input"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group controlId="reg-college">
-                      <Form.Label className="text-white small">College / University Name *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="college"
-                        value={formData.college}
-                        onChange={handleChange}
-                        required
-                        minLength={2}
-                        maxLength={160}
-                        placeholder="e.g. Bhagalpur College of Engineering"
-                        className="dark-input"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={12}>
-                    <Form.Group controlId="reg-branch">
-                      <Form.Label className="text-white small">Branch & Department *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="branch"
-                        value={formData.branch}
-                        onChange={handleChange}
-                        required
-                        minLength={2}
-                        maxLength={120}
-                        placeholder="e.g. Electronics & Communication Engineering (ECE)"
-                        className="dark-input"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                {/* 2. Competition Arena Selection */}
-                <h5 className="section-divider-title text-purple mb-3">02 // Arena Selection</h5>
-                <Row className="gy-3 mb-4">
-                  <Col md={8}>
-                    <Form.Group controlId="reg-primary-arena">
-                      <Form.Label className="text-white small">Primary Competition / Arena *</Form.Label>
-                      <Form.Select
-                        name="primaryArena"
-                        value={formData.primaryArena}
-                        onChange={handleChange}
-                        className="dark-input"
-                      >
-                        {catalog.map((comp) => (
-                          <option key={comp.id} value={comp.id}>
-                            {comp.title} ({comp.fee} • {comp.team_size})
-                          </option>
-                        ))}
-                      </Form.Select>
-                      <Form.Text className="text-white-50 small">
-                        Prize: {primaryComp.prize_pool} • Venue: {primaryComp.venue}
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-
-                  <Col md={4}>
-                    <Form.Group controlId="reg-team-size">
-                      <Form.Label className="text-white small">Team Members in Arena *</Form.Label>
-                      <Form.Select
-                        name="teamSize"
-                        value={String(parsedTeamSize)}
-                        onChange={handleChange}
-                        className="dark-input"
-                      >
-                        {teamOptions.map((n) => (
-                          <option key={n} value={String(n)}>
-                            {n === 1 ? '1 (Solo)' : `${n} Members`}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-
-                  {/* Additional Arenas */}
-                  <Col md={12}>
-                    <Form.Label htmlFor="reg-additional-arena" className="text-white small">Add Additional Competition (Optional)</Form.Label>
-                    <div className="d-flex gap-2">
-                      <Form.Select
-                        id="reg-additional-arena"
-                        value={additionalSelection}
-                        onChange={(e) => setAdditionalSelection(e.target.value)}
-                        className="dark-input"
-                      >
-                        <option value="">Select another arena...</option>
-                        {catalog
-                          .filter((c) => c.id !== formData.primaryArena && !formData.additionalArenas.includes(c.id))
-                          .map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.title} ({c.fee})
-                            </option>
-                          ))}
-                      </Form.Select>
-                      <Button
-                        variant="purple"
+              {/* Multistep Progress Indicator */}
+              <div className="multistep-progress mb-4" aria-label="Registration steps">
+                <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                  {STEPS.map((step, index) => {
+                    const reachable = index <= currentStep;
+                    return (
+                      <button
+                        key={step.id}
                         type="button"
-                        onClick={handleAddArena}
-                        disabled={!additionalSelection}
-                        className="px-4"
+                        disabled={!reachable}
+                        onClick={() => reachable && setCurrentStep(index)}
+                        className={cn(
+                          'multistep-step-btn bg-transparent border-0 p-0 d-flex flex-column align-items-center',
+                          reachable ? 'is-reachable' : 'is-locked',
+                          index === currentStep && 'is-current',
+                        )}
                       >
-                        ＋ Add
-                      </Button>
-                    </div>
+                        <span
+                          className={cn(
+                            'multistep-dot',
+                            index < currentStep && 'is-complete',
+                            index === currentStep && 'is-active',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'multistep-label d-none d-sm-block mt-2',
+                            index === currentStep ? 'text-purple fw-semibold' : 'text-white-75',
+                          )}
+                        >
+                          {step.title}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="multistep-track">
+                  <motion.div
+                    className="multistep-fill"
+                    initial={false}
+                    animate={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
 
-                    {formData.additionalArenas.length > 0 && (
-                      <div className="mt-3 d-flex gap-2 flex-wrap">
-                        {formData.additionalArenas.map((aId) => {
-                          const c = catalog.find((x) => x.id === aId);
-                          return (
-                            <Badge
-                              key={aId}
-                              bg="secondary"
-                              className="p-2 d-flex align-items-center gap-2"
-                            >
-                              <span>{c?.title} ({c?.fee})</span>
-                              <button
-                                type="button"
-                                aria-label={`Remove ${c?.title || aId}`}
-                                className="bg-transparent border-0 text-white fw-bold p-0 ms-1 lh-1"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => handleRemoveArena(aId)}
+              <Questionnaire noValidate={false} onSubmit={handleOpenGateway}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={contentVariants}
+                  >
+                    {/* Step 1: Delegate Personal Details */}
+                    {currentStep === 0 && (
+                      <div>
+                        <h5 className="section-divider-title text-purple mb-3">01 // Delegate Information</h5>
+                        <Row className="gy-3 mb-4">
+                          <Col md={6}>
+                            <QuestionnaireItem name="fullName" required hidden={false} inert={false}>
+                              <QuestionnaireTitle className="text-white small mb-1">Full Name *</QuestionnaireTitle>
+                              <QuestionnaireInput
+                                id="reg-full-name"
+                                type="text"
+                                value={formData.fullName}
+                                onChange={(e) => handleFieldChange('fullName', e.target.value)}
+                                required
+                                minLength={2}
+                                maxLength={120}
+                                placeholder="e.g. Sujal Kumar"
+                                className="dark-input"
+                              />
+                              <QuestionnaireError>Please enter your full name (2–120 characters).</QuestionnaireError>
+                            </QuestionnaireItem>
+                          </Col>
+                          <Col md={6}>
+                            <QuestionnaireItem name="rollNumber" required hidden={false} inert={false}>
+                              <QuestionnaireTitle className="text-white small mb-1">University / College Roll Number *</QuestionnaireTitle>
+                              <QuestionnaireInput
+                                id="reg-roll-number"
+                                type="text"
+                                value={formData.rollNumber}
+                                onChange={(e) => handleFieldChange('rollNumber', e.target.value)}
+                                required
+                                minLength={2}
+                                maxLength={40}
+                                placeholder="e.g. 24103123001"
+                                className="dark-input"
+                              />
+                              <QuestionnaireError>Please enter your college roll number.</QuestionnaireError>
+                            </QuestionnaireItem>
+                          </Col>
+                          <Col md={6}>
+                            <QuestionnaireItem name="phone" required hidden={false} inert={false}>
+                              <QuestionnaireTitle className="text-white small mb-1">WhatsApp / Contact Phone * (10 Digits)</QuestionnaireTitle>
+                              <QuestionnaireInput
+                                id="reg-phone"
+                                type="tel"
+                                inputMode="numeric"
+                                pattern="\d{10}"
+                                maxLength={10}
+                                value={formData.phone}
+                                onChange={(e) => handleFieldChange('phone', e.target.value)}
+                                required
+                                placeholder="e.g. 9876543210"
+                                className="dark-input"
+                              />
+                              <QuestionnaireError>Please enter a valid 10-digit mobile number.</QuestionnaireError>
+                            </QuestionnaireItem>
+                          </Col>
+                          <Col md={6}>
+                            <QuestionnaireItem name="college" hidden={false} inert={false}>
+                              <QuestionnaireTitle className="text-white small mb-1">College / University Name *</QuestionnaireTitle>
+                              <Form.Select
+                                id="reg-college"
+                                aria-label="College / University Name *"
+                                className="dark-input"
+                                required
+                                value={isOtherCollege ? OTHER_COLLEGE : formData.college}
+                                onChange={(e) => {
+                                  const other = e.target.value === OTHER_COLLEGE;
+                                  setIsOtherCollege(other);
+                                  setFormData((prev) => ({ ...prev, college: other ? '' : e.target.value }));
+                                  idempotencyKeyRef.current = null;
+                                }}
                               >
-                                ✕
-                              </button>
-                            </Badge>
-                          );
-                        })}
+                                <option value="" disabled>Select your college</option>
+                                {biharEngineeringColleges.map((name) => (
+                                  <option key={name} value={name}>{name}</option>
+                                ))}
+                                <option value={OTHER_COLLEGE}>Other (enter name)</option>
+                              </Form.Select>
+                              {isOtherCollege && (
+                                <div className="mt-2">
+                                  <label htmlFor="reg-college-other" className="visually-hidden">
+                                    Enter your college / university name
+                                  </label>
+                                  <QuestionnaireInput
+                                    id="reg-college-other"
+                                    type="text"
+                                    value={formData.college}
+                                    onChange={(e) => handleFieldChange('college', e.target.value)}
+                                    required
+                                    minLength={2}
+                                    maxLength={160}
+                                    placeholder="Enter your college / university name"
+                                    className="dark-input"
+                                    autoFocus
+                                  />
+                                </div>
+                              )}
+                              <QuestionnaireError>Please select or enter your college name.</QuestionnaireError>
+                            </QuestionnaireItem>
+                          </Col>
+                          <Col md={12}>
+                            <QuestionnaireItem name="branch" required hidden={false} inert={false}>
+                              <QuestionnaireTitle className="text-white small mb-1">Branch &amp; Department *</QuestionnaireTitle>
+                              <QuestionnaireInput
+                                id="reg-branch"
+                                type="text"
+                                value={formData.branch}
+                                onChange={(e) => handleFieldChange('branch', e.target.value)}
+                                required
+                                minLength={2}
+                                maxLength={120}
+                                placeholder="e.g. Electronics & Communication Engineering (ECE)"
+                                className="dark-input"
+                              />
+                              <QuestionnaireError>Please enter your branch &amp; department.</QuestionnaireError>
+                            </QuestionnaireItem>
+                          </Col>
+                        </Row>
                       </div>
                     )}
-                  </Col>
-                </Row>
 
-                {/* 3. Campus Accommodation */}
-                <h5 className="section-divider-title text-purple mb-3">03 // Campus Accommodation Option</h5>
-                <Row className="gy-3 mb-4">
-                  <Col md={12}>
-                    <div className="accommodation-options-grid">
-                      <label className={`option-card ${formData.accommodation === 'none' ? 'selected' : ''}`}>
-                        <input
-                          type="radio"
-                          name="accommodation"
-                          value="none"
-                          checked={formData.accommodation === 'none'}
-                          onChange={handleChange}
-                          className="visually-hidden"
-                        />
-                        <div className="option-title">No Stay Needed</div>
-                        <div className="option-price">₹{accomRates.none}</div>
-                        <div className="option-desc">Day scholar / local commute</div>
-                      </label>
+                    {/* Step 2: Competition Arena Selection */}
+                    {currentStep === 1 && (
+                      <div>
+                        <h5 className="section-divider-title text-purple mb-3">02 // Arena Selection</h5>
+                        <Row className="gy-3 mb-4">
+                          <Col md={8}>
+                            <Form.Group controlId="reg-primary-arena">
+                              <Form.Label className="text-white small">Primary Competition / Arena *</Form.Label>
+                              <Form.Select
+                                name="primaryArena"
+                                value={formData.primaryArena}
+                                onChange={handleChange}
+                                className="dark-input"
+                              >
+                                {catalog.map((comp) => (
+                                  <option key={comp.id} value={comp.id}>
+                                    {comp.title} ({comp.fee} • {comp.team_size})
+                                  </option>
+                                ))}
+                              </Form.Select>
+                              <Form.Text className="text-white-50 small">
+                                Prize: {primaryComp.prize_pool} • Venue: {primaryComp.venue}
+                              </Form.Text>
+                            </Form.Group>
+                          </Col>
 
-                      <label className={`option-card ${formData.accommodation === 'lodging' ? 'selected' : ''}`}>
-                        <input
-                          type="radio"
-                          name="accommodation"
-                          value="lodging"
-                          checked={formData.accommodation === 'lodging'}
-                          onChange={handleChange}
-                          className="visually-hidden"
-                        />
-                        <div className="option-title">Lodging Only</div>
-                        <div className="option-price">₹{accomRates.lodging} / day</div>
-                        <div className="option-desc">Bedding & 24/7 security</div>
-                      </label>
+                          <Col md={4}>
+                            <Form.Group controlId="reg-team-size">
+                              <Form.Label className="text-white small">Team Members in Arena *</Form.Label>
+                              <Form.Select
+                                name="teamSize"
+                                value={String(parsedTeamSize)}
+                                onChange={handleChange}
+                                className="dark-input"
+                              >
+                                {teamOptions.map((n) => (
+                                  <option key={n} value={String(n)}>
+                                    {n === 1 ? '1 (Solo)' : `${n} Members`}
+                                  </option>
+                                ))}
+                              </Form.Select>
+                            </Form.Group>
+                          </Col>
 
-                      <label className={`option-card ${formData.accommodation === 'mess' ? 'selected' : ''}`}>
-                        <input
-                          type="radio"
-                          name="accommodation"
-                          value="mess"
-                          checked={formData.accommodation === 'mess'}
-                          onChange={handleChange}
-                          className="visually-hidden"
-                        />
-                        <div className="option-title">Mess Dining Only</div>
-                        <div className="option-price">₹{accomRates.mess} / day</div>
-                        <div className="option-desc">Breakfast, Lunch & Dinner</div>
-                      </label>
+                          {/* Additional Arenas */}
+                          <Col md={12}>
+                            <Form.Label htmlFor="reg-additional-arena" className="text-white small">Add Additional Competition (Optional)</Form.Label>
+                            <div className="d-flex gap-2">
+                              <Form.Select
+                                id="reg-additional-arena"
+                                value={additionalSelection}
+                                onChange={(e) => setAdditionalSelection(e.target.value)}
+                                className="dark-input"
+                              >
+                                <option value="">Select another arena...</option>
+                                {catalog
+                                  .filter((c) => c.id !== formData.primaryArena && !formData.additionalArenas.includes(c.id))
+                                  .map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.title} ({c.fee})
+                                    </option>
+                                  ))}
+                              </Form.Select>
+                              <Button
+                                variant="purple"
+                                type="button"
+                                onClick={handleAddArena}
+                                disabled={!additionalSelection}
+                                className="px-4"
+                              >
+                                ＋ Add
+                              </Button>
+                            </div>
 
-                      <label className={`option-card ${formData.accommodation === 'both' ? 'selected' : ''}`}>
-                        <input
-                          type="radio"
-                          name="accommodation"
-                          value="both"
-                          checked={formData.accommodation === 'both'}
-                          onChange={handleChange}
-                          className="visually-hidden"
-                        />
-                        <div className="option-title">Full All-Inclusive</div>
-                        <div className="option-price text-purple">₹{accomRates.both} / day</div>
-                        <div className="option-desc">Hostel + 3 Meals Combo</div>
-                      </label>
-                    </div>
-                  </Col>
-                </Row>
+                            {formData.additionalArenas.length > 0 && (
+                              <div className="mt-3 d-flex gap-2 flex-wrap">
+                                {formData.additionalArenas.map((aId) => {
+                                  const c = catalog.find((x) => x.id === aId);
+                                  return (
+                                    <Badge
+                                      key={aId}
+                                      bg="secondary"
+                                      className="p-2 d-flex align-items-center gap-2"
+                                    >
+                                      <span>{c?.title} ({c?.fee})</span>
+                                      <button
+                                        type="button"
+                                        aria-label={`Remove ${c?.title || aId}`}
+                                        className="bg-transparent border-0 text-white fw-bold p-0 ms-1 lh-1"
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => handleRemoveArena(aId)}
+                                      >
+                                        ✕
+                                      </button>
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </Col>
+                        </Row>
+                      </div>
+                    )}
 
-                {/* 4. Live Fee Summary & Checkout Trigger */}
-                <div className="fee-summary-strip p-4 rounded-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                  <div>
-                    <div className="text-white-50 small">ESTIMATED TOTAL (VERIFIED SERVER-SIDE AT CHECKOUT)</div>
-                    <div className="total-display text-white fw-bold fs-3">
-                      ₹{previewTotal}
-                      <span className="fs-6 text-white-50 ms-2">
-                        ({parsedTeamSize} Member{parsedTeamSize !== 1 ? 's' : ''})
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <ButtonWithIcon type="submit" disabled={creatingReg}>
-                      {creatingReg ? 'CREATING REGISTRATION...' : 'PROCEED TO PAYMENT GATEWAY'}
-                    </ButtonWithIcon>
-                  </div>
+                    {/* Step 3: Campus Accommodation */}
+                    {currentStep === 2 && (
+                      <QuestionnaireItem name="accommodation" hidden={false} inert={false} className="mb-4">
+                        <QuestionnaireTitle className="section-divider-title text-purple mb-2 float-none w-100 px-0">
+                          03 // Campus Accommodation Option (Flat Event Add-on Per Member)
+                        </QuestionnaireTitle>
+                        <QuestionnaireDescription className="text-white-75 small mb-3">
+                          Select your preferred stay and dining package for the festival.
+                        </QuestionnaireDescription>
+                        <Row className="gy-3">
+                          <Col md={12}>
+                            <QuestionnaireChoices className="accommodation-options-grid">
+                              <QuestionnaireChoice
+                                value="none"
+                                checked={formData.accommodation === 'none'}
+                                onChange={(e) => handleFieldChange('accommodation', e.target.value)}
+                                className="option-card"
+                              >
+                                <div className="option-title">No Stay Needed</div>
+                                <div className="option-price">₹{accomRates.none}</div>
+                                <QuestionnaireChoiceDescription className="option-desc">
+                                  Day scholar / local commute
+                                </QuestionnaireChoiceDescription>
+                              </QuestionnaireChoice>
+
+                              <QuestionnaireChoice
+                                value="lodging"
+                                checked={formData.accommodation === 'lodging'}
+                                onChange={(e) => handleFieldChange('accommodation', e.target.value)}
+                                className="option-card"
+                              >
+                                <div className="option-title">Lodging Only</div>
+                                <div className="option-price">₹{accomRates.lodging} / member</div>
+                                <QuestionnaireChoiceDescription className="option-desc">
+                                  Bedding &amp; 24/7 security
+                                </QuestionnaireChoiceDescription>
+                              </QuestionnaireChoice>
+
+                              <QuestionnaireChoice
+                                value="mess"
+                                checked={formData.accommodation === 'mess'}
+                                onChange={(e) => handleFieldChange('accommodation', e.target.value)}
+                                className="option-card"
+                              >
+                                <div className="option-title">Mess Dining Only</div>
+                                <div className="option-price">₹{accomRates.mess} / member</div>
+                                <QuestionnaireChoiceDescription className="option-desc">
+                                  Breakfast, Lunch &amp; Dinner
+                                </QuestionnaireChoiceDescription>
+                              </QuestionnaireChoice>
+
+                              <QuestionnaireChoice
+                                value="both"
+                                checked={formData.accommodation === 'both'}
+                                onChange={(e) => handleFieldChange('accommodation', e.target.value)}
+                                className="option-card"
+                              >
+                                <div className="option-title">Full All-Inclusive</div>
+                                <div className="option-price text-purple">₹{accomRates.both} / member</div>
+                                <QuestionnaireChoiceDescription className="option-desc">
+                                  Hostel + 3 Meals Combo
+                                </QuestionnaireChoiceDescription>
+                              </QuestionnaireChoice>
+                            </QuestionnaireChoices>
+                          </Col>
+                        </Row>
+                        <QuestionnaireError />
+                      </QuestionnaireItem>
+                    )}
+
+                    {/* Step 4: Review & Checkout */}
+                    {currentStep === 3 && (
+                      <div>
+                        <h5 className="section-divider-title text-purple mb-3">04 // Review &amp; Checkout</h5>
+                        <div className="review-summary-grid p-3 rounded-3 mb-4">
+                          <div className="row gy-2 small">
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Delegate:</span>{' '}
+                              <span className="text-white fw-semibold">{formData.fullName}</span>
+                            </div>
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Roll No:</span>{' '}
+                              <span className="text-white fw-semibold">{formData.rollNumber}</span>
+                            </div>
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Phone:</span>{' '}
+                              <span className="text-white fw-semibold">{formData.phone}</span>
+                            </div>
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Branch:</span>{' '}
+                              <span className="text-white fw-semibold">{formData.branch}</span>
+                            </div>
+                            <div className="col-12">
+                              <span className="text-white-75">College:</span>{' '}
+                              <span className="text-white fw-semibold">{formData.college}</span>
+                            </div>
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Primary Arena:</span>{' '}
+                              <span className="text-white fw-semibold">{primaryComp?.title} ({parsedTeamSize} Member{parsedTeamSize !== 1 ? 's' : ''})</span>
+                            </div>
+                            <div className="col-sm-6">
+                              <span className="text-white-75">Accommodation:</span>{' '}
+                              <span className="text-white fw-semibold text-uppercase">{formData.accommodation}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {catalogWarning && (
+                          <div role="status" className="alert alert-warning text-dark small mb-3">
+                            {catalogWarning}
+                          </div>
+                        )}
+
+                        <div className="fee-summary-strip p-4 rounded-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                          <div>
+                            <div className="text-white-50 small">ESTIMATED TOTAL (VERIFIED SERVER-SIDE AT CHECKOUT)</div>
+                            <div className="total-display text-white fw-bold fs-3">
+                              ₹{previewTotal}
+                              <span className="fs-6 text-white-50 ms-2">
+                                ({parsedTeamSize} Member{parsedTeamSize !== 1 ? 's' : ''})
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-100 mt-1">
+                            <p className="small text-white-75 mb-0">
+                              By creating a registration, you acknowledge the{' '}
+                              <Link to="/policies" className="text-purple">Event Policies &amp; Privacy Notice</Link>.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Multistep Footer Navigation */}
+                <div className="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-25 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline-light"
+                    onClick={prevStep}
+                    disabled={currentStep === 0}
+                    className="d-inline-flex align-items-center gap-1 rounded-pill px-3"
+                  >
+                    <ChevronLeft size={16} aria-hidden="true" />
+                    <span>Back</span>
+                  </Button>
+
+                  {currentStep < STEPS.length - 1 ? (
+                    <Button
+                      type="button"
+                      variant="purple"
+                      onClick={nextStep}
+                      disabled={!isStepValid()}
+                      className="d-inline-flex align-items-center gap-1 rounded-pill px-4"
+                    >
+                      <span>Next</span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      variant="purple"
+                      disabled={!isStepValid() || creatingReg}
+                      data-slot="questionnaire-submit"
+                      className="d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                    >
+                      {creatingReg ? (
+                        <>
+                          <Loader2 size={16} className="spin-icon" aria-hidden="true" />
+                          <span>CREATING REGISTRATION...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>PROCEED TO PAYMENT GATEWAY</span>
+                          <Check size={16} aria-hidden="true" />
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
-              </Form>
+              </Questionnaire>
+
+              <div className="mt-3 text-center text-white-75 small">
+                Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].title}
+              </div>
             </Card>
           </Col>
         </Row>
@@ -700,26 +1018,32 @@ const Register = () => {
               {/* Order Summary */}
               <div className="order-summary-box p-3 rounded-3 mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-white-50 small">SERVER PASS REFERENCE:</span>
+                  <span className="text-white-75 small">SERVER PASS REFERENCE:</span>
                   <span className="badge bg-purple-glow">{passRef}</span>
                 </div>
                 <div className="summary-row d-flex justify-content-between small py-1">
-                  <span className="text-white-50">Participant:</span>
+                  <span className="text-white-75">Participant:</span>
                   <span className="text-white fw-bold">{serverRegistration?.full_name || formData.fullName}</span>
                 </div>
                 <div className="summary-row d-flex justify-content-between small py-1">
-                  <span className="text-white-50">Primary Arena:</span>
-                  <span className="text-white">{primaryComp.title}</span>
+                  <span className="text-white-75">Primary Arena:</span>
+                  <span className="text-white">
+                    {catalog.find((c) => c.id === serverRegistration?.primary_arena_id)?.title || primaryComp.title}
+                  </span>
                 </div>
                 {formData.additionalArenas.length > 0 && (
                   <div className="summary-row d-flex justify-content-between small py-1">
-                    <span className="text-white-50">Additional Arenas:</span>
+                    <span className="text-white-75">Additional Arenas:</span>
                     <span className="text-white">{formData.additionalArenas.length} Extra</span>
                   </div>
                 )}
                 <div className="summary-row d-flex justify-content-between small py-1">
-                  <span className="text-white-50">Campus Stay:</span>
-                  <span className="text-white text-capitalize">{formData.accommodation}</span>
+                  <span className="text-white-75">Team Size:</span>
+                  <span className="text-white">{serverRegistration?.team_size ?? parsedTeamSize}</span>
+                </div>
+                <div className="summary-row d-flex justify-content-between small py-1">
+                  <span className="text-white-75">Campus Stay:</span>
+                  <span className="text-white text-capitalize">{serverRegistration?.accommodation_id || formData.accommodation}</span>
                 </div>
                 <div className="summary-row d-flex justify-content-between fw-bold pt-2 border-top border-secondary mt-2">
                   <span>SERVER VERIFIED PAYABLE:</span>
@@ -727,33 +1051,41 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Local Offline QR & UPI Intent */}
-              <div className="text-center mb-4">
-                {qrDataUrl && (
-                  <div className="qr-box p-3 bg-white rounded-3 d-inline-block mb-3">
-                    <img src={qrDataUrl} alt="UPI Payment QR Code" width="180" height="180" />
+              {/* Local Offline QR & UPI Intent (rendered only when official server VPA is configured) */}
+              {isUpiConfigured && (
+                <div className="text-center mb-4">
+                  {qrDataUrl && (
+                    <div className="qr-box p-3 bg-white rounded-3 d-inline-block mb-3">
+                      <img src={qrDataUrl} alt="UPI Payment QR Code" width="180" height="180" />
+                    </div>
+                  )}
+                  <div className="upi-id-box d-flex align-items-center justify-content-center gap-2 mb-2 flex-wrap">
+                    <span className="text-white-75 small">OFFICIAL UPI VPA:</span>
+                    <code className="text-purple fw-bold bg-dark px-2 py-1 rounded">{officialVpa}</code>
+                    <Button
+                      variant="outline-light"
+                      size="sm"
+                      type="button"
+                      onClick={handleCopyUpi}
+                      className="py-0 px-2"
+                    >
+                      {copiedUpi ? '✓ Copied' : 'Copy'}
+                    </Button>
                   </div>
-                )}
-                <div className="upi-id-box d-flex align-items-center justify-content-center gap-2 mb-2">
-                  <span className="text-white-50 small">OFFICIAL UPI VPA:</span>
-                  <code className="text-purple fw-bold bg-dark px-2 py-1 rounded">{officialVpa}</code>
-                  <Button
-                    variant="outline-light"
-                    size="sm"
-                    onClick={handleCopyUpi}
-                    className="py-0 px-2"
+                  {clipboardError && (
+                    <div role="alert" className="alert alert-warning text-dark small py-1 px-2 mb-2">
+                      {clipboardError}
+                    </div>
+                  )}
+                  <div className="small text-white-75 mb-3">Payee: {officialPayeeName}</div>
+                  <a
+                    href={upiUrl}
+                    className="btn btn-purple btn-sm px-4 py-2 w-100"
                   >
-                    {copiedUpi ? '✓ Copied' : 'Copy'}
-                  </Button>
+                    Pay via Any UPI App (GPay / PhonePe / Paytm / BHIM)
+                  </a>
                 </div>
-                <div className="small text-white-50 mb-3">Payee: {officialPayeeName}</div>
-                <a
-                  href={upiUrl}
-                  className="btn btn-purple btn-sm px-4 py-2 w-100"
-                >
-                  📱 Pay via Any UPI App (GPay / PhonePe / Paytm / BHIM)
-                </a>
-              </div>
+              )}
 
               {/* UTR Input Form */}
               <Form onSubmit={handleFinalVerify}>
@@ -764,6 +1096,7 @@ const Register = () => {
                   <Form.Control
                     type="text"
                     required
+                    disabled={!isUpiConfigured}
                     inputMode="numeric"
                     pattern="\d{12}"
                     maxLength={12}
@@ -772,14 +1105,15 @@ const Register = () => {
                     onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
                     className="dark-input"
                   />
-                  <Form.Text className="text-white-50 small">
+                  <Form.Text className="text-white-75 small">
                     Submitting your UTR sets status to PENDING VERIFICATION until reconciled by the accounts desk.
                   </Form.Text>
                 </Form.Group>
 
                 <div className="d-flex justify-content-between gap-2">
                   <Button
-                    variant="outline-secondary"
+                    variant="outline-light"
+                    type="button"
                     onClick={() => setShowCheckoutModal(false)}
                     className="w-50"
                   >
@@ -788,7 +1122,7 @@ const Register = () => {
                   <Button
                     variant="purple"
                     type="submit"
-                    disabled={submittingUtr}
+                    disabled={submittingUtr || !isUpiConfigured}
                     className="w-50"
                   >
                     {submittingUtr ? 'SUBMITTING UTR...' : 'SUBMIT UTR FOR VERIFICATION'}

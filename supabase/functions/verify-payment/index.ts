@@ -14,12 +14,17 @@ Deno.serve((req) => {
       return { data, error };
     },
     async fetchPaymentOwnerContext(registrationId: string) {
-      const { data } = await admin
+      const { data, error } = await admin
         .from("registrations")
         .select("pass_code, full_name, profile:profiles(email)")
         .eq("id", registrationId)
         .maybeSingle();
-      if (!data) return null;
+      if (error || !data) {
+        if (error) {
+          console.error(JSON.stringify({ ts: new Date().toISOString(), event: "verify_payment_owner_context_failed", code: error.code }));
+        }
+        return null;
+      }
       // deno-lint-ignore no-explicit-any
       const profile = (data as any).profile;
       return {

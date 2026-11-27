@@ -1,0 +1,1225 @@
+{
+  "tableGrants": [
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "competitions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "email_notifications",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "payments",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "rate_limits",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "registration_arenas",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "registrations",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    }
+  ],
+  "columnGrants": [
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "description",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "id",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "is_active",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "name",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "price_per_person_inr",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "updated_at",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "description",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "is_active",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "name",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "price_per_person_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "accommodation_plans",
+      "column_name": "updated_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "additional_fee_scope",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "category",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "category_id",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "created_at",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "event_date",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "event_time",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "fee_inr",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "fee_type",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "id",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "is_active",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "max_team_size",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "min_team_size",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "num_id",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "prize_pool",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "title",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "updated_at",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "venue",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "additional_fee_scope",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "category",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "category_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "created_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "event_date",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "event_time",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "fee_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "fee_type",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "is_active",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "max_team_size",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "min_team_size",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "num_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "prize_pool",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "title",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "updated_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "competitions",
+      "column_name": "venue",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "column_name": "assigned_by",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "column_name": "competition_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "column_name": "coordinator_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "column_name": "created_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "coordinator_assignments",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "amount_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "registration_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "rejection_reason",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "status",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "submitted_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "user_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "utr_number",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "verified_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "verified_by",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "branch",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "branch",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "college",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "college",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "created_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "email",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "full_name",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "full_name",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "is_active",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "phone",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "phone",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "role",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "roll_number",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "roll_number",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "updated_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "column_name": "competition_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "column_name": "fee_snapshot_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "column_name": "is_primary",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registration_arenas",
+      "column_name": "registration_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "accommodation_fee_snapshot_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "accommodation_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "additional_fee_snapshot_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "branch",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "college",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "computed_total_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "created_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "full_name",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "idempotency_key",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "pass_code",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "phone",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "primary_arena_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "primary_fee_snapshot_inr",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "roll_number",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "status",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "team_size",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "updated_at",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "registrations",
+      "column_name": "user_id",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    }
+  ],
+  "sequenceUsageGrantsForClientRoles": [],
+  "functions": [
+    {
+      "schema": "private",
+      "name": "current_user_role",
+      "security_definer": true,
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "private",
+      "name": "is_admin_or_super",
+      "security_definer": true,
+      "config": [
+        "search_path=public, auth, pg_temp"
+      ],
+      "grants": [
+        "authenticated:EXECUTE",
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "check_and_increment_rate_limit",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "create_registration_tx",
+      "security_definer": true,
+      "config": [
+        "search_path=public, extensions"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "get_admin_dashboard_analytics",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "get_coordinator_dashboard_analytics",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "get_registration_summary",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "handle_new_user",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "PUBLIC:EXECUTE",
+        "postgres:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "handle_user_email_updated",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "PUBLIC:EXECUTE",
+        "postgres:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "prevent_audit_log_tampering",
+      "security_definer": false,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "PUBLIC:EXECUTE",
+        "postgres:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "prevent_privileged_profile_mutation",
+      "security_definer": false,
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "grants": [
+        "PUBLIC:EXECUTE",
+        "postgres:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "submit_utr_tx",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "touch_updated_at",
+      "security_definer": false,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "PUBLIC:EXECUTE",
+        "postgres:EXECUTE"
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "verify_payment_tx",
+      "security_definer": true,
+      "config": [
+        "search_path=public"
+      ],
+      "grants": [
+        "postgres:EXECUTE",
+        "service_role:EXECUTE"
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "table_name": "accommodation_plans",
+      "trigger_name": "trg_accom_updated_at",
+      "definition": "CREATE TRIGGER trg_accom_updated_at BEFORE UPDATE ON public.accommodation_plans FOR EACH ROW EXECUTE FUNCTION touch_updated_at()"
+    },
+    {
+      "table_name": "audit_logs",
+      "trigger_name": "trg_audit_logs_immutable",
+      "definition": "CREATE TRIGGER trg_audit_logs_immutable BEFORE DELETE OR UPDATE ON public.audit_logs FOR EACH ROW EXECUTE FUNCTION prevent_audit_log_tampering()"
+    },
+    {
+      "table_name": "audit_logs",
+      "trigger_name": "trg_audit_logs_no_truncate",
+      "definition": "CREATE TRIGGER trg_audit_logs_no_truncate BEFORE TRUNCATE ON public.audit_logs FOR EACH STATEMENT EXECUTE FUNCTION prevent_audit_log_tampering()"
+    },
+    {
+      "table_name": "competitions",
+      "trigger_name": "trg_competitions_updated_at",
+      "definition": "CREATE TRIGGER trg_competitions_updated_at BEFORE UPDATE ON public.competitions FOR EACH ROW EXECUTE FUNCTION touch_updated_at()"
+    },
+    {
+      "table_name": "email_notifications",
+      "trigger_name": "trg_email_notifications_updated_at",
+      "definition": "CREATE TRIGGER trg_email_notifications_updated_at BEFORE UPDATE ON public.email_notifications FOR EACH ROW EXECUTE FUNCTION touch_updated_at()"
+    },
+    {
+      "table_name": "profiles",
+      "trigger_name": "trg_profiles_guard_privileged",
+      "definition": "CREATE TRIGGER trg_profiles_guard_privileged BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION prevent_privileged_profile_mutation()"
+    },
+    {
+      "table_name": "profiles",
+      "trigger_name": "trg_profiles_updated_at",
+      "definition": "CREATE TRIGGER trg_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION touch_updated_at()"
+    },
+    {
+      "table_name": "registrations",
+      "trigger_name": "trg_registrations_updated_at",
+      "definition": "CREATE TRIGGER trg_registrations_updated_at BEFORE UPDATE ON public.registrations FOR EACH ROW EXECUTE FUNCTION touch_updated_at()"
+    },
+    {
+      "table_name": "users",
+      "trigger_name": "on_auth_user_created",
+      "definition": "CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user()"
+    },
+    {
+      "table_name": "users",
+      "trigger_name": "on_auth_user_email_updated",
+      "definition": "CREATE TRIGGER on_auth_user_email_updated AFTER UPDATE OF email ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_user_email_updated()"
+    }
+  ]
+}

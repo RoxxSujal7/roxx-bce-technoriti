@@ -1,11 +1,11 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 
 const Contact = () => {
   return (
     <div className="contact-page-wrapper" style={{ backgroundColor: '#000000', color: '#ffffff', minHeight: '100vh', paddingBottom: '80px' }}>
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="CONTACT"
         bigHeaderCaps="HELPDESK"
         subtitle="BHAGALPUR COLLEGE OF ENGINEERING • OFFICIAL COMMUNICATION CHANNELS"

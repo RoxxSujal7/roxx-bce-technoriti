@@ -1,14 +1,15 @@
 import { assertEquals, assertMatch } from "jsr:@std/assert@1";
-import type { AuthenticatedActor, AuthLookup } from "../functions/_shared/auth.ts";
+import { createSupabaseAuthLookup, type AuthenticatedActor, type AuthLookup } from "../functions/_shared/auth.ts";
 import type { RateLimiter } from "../functions/_shared/rateLimit.ts";
 import { makeCreateRegistrationHandler } from "../functions/create-registration/handler.ts";
 import { makeSubmitUtrHandler } from "../functions/submit-utr/handler.ts";
 import { makeVerifyPaymentHandler } from "../functions/verify-payment/handler.ts";
-import { makeGetAdminRegistrationsHandler } from "../functions/get-admin-registrations/handler.ts";
+import { makeGetAdminRegistrationsHandler, sanitizeAuditLogRow } from "../functions/get-admin-registrations/handler.ts";
 import { makeManageAdminsHandler } from "../functions/manage-admins/handler.ts";
 import { makeManageCompetitionsHandler } from "../functions/manage-competitions/handler.ts";
 import { makeGetCoordinatorRegistrationsHandler } from "../functions/get-coordinator-registrations/handler.ts";
 import { makeGetMyRegistrationsHandler } from "../functions/get-my-registrations/handler.ts";
+import { getAllowedOrigins } from "../functions/_shared/cors.ts";
 
 const ACTORS: Record<string, AuthenticatedActor> = {
   "tok-participant": { id: "11111111-1111-4111-8111-111111111111", email: "p1@example.com", full_name: "Participant One", role: "participant", is_active: true },
@@ -480,4 +481,399 @@ Deno.test("get-coordinator-registrations restricts access strictly to assigned c
   const okBody = await ok.json();
   assertEquals(okBody.analytics.kpis.verified_registrations, 1);
   assertEquals(okBody.analytics.kpis.verified_collections_inr, undefined);
+});
+
+Deno.test("Privileged Edge Functions block enrolled MFA accounts at AAL1 and enforce ENFORCE_PRIVILEGED_MFA when enabled", async () => {
+  const mfaActors: Record<string, AuthenticatedActor> = {
+    "tok-sa-enrolled-aal1": {
+      id: "77777777-7777-4777-8777-777777777777",
+      email: "sa-mfa@example.com",
+      full_name: "SA MFA",
+      role: "super_admin",
+      is_active: true,
+      aal: "aal1",
+      hasVerifiedMfaFactor: true,
+    },
+    "tok-sa-enrolled-aal2": {
+      id: "77777777-7777-4777-8777-777777777777",
+      email: "sa-mfa@example.com",
+      full_name: "SA MFA",
+      role: "super_admin",
+      is_active: true,
+      aal: "aal2",
+      hasVerifiedMfaFactor: true,
+    },
+    "tok-admin-no-mfa-aal1": {
+      id: "88888888-8888-4888-8888-888888888888",
+      email: "admin-nomfa@example.com",
+      full_name: "Admin No MFA",
+      role: "admin",
+      is_active: true,
+      aal: "aal1",
+      hasVerifiedMfaFactor: false,
+    },
+    "tok-coord-enrolled-aal1": {
+      id: "99999999-9999-4999-8999-999999999999",
+      email: "coord-mfa@example.com",
+      full_name: "Coord MFA",
+      role: "coordinator",
+      is_active: true,
+      aal: "aal1",
+      hasVerifiedMfaFactor: true,
+    },
+    "tok-coord-enrolled-aal2": {
+      id: "99999999-9999-4999-8999-999999999999",
+      email: "coord-mfa@example.com",
+      full_name: "Coord MFA",
+      role: "coordinator",
+      is_active: true,
+      aal: "aal2",
+      hasVerifiedMfaFactor: true,
+    },
+    "tok-sa-deleted-factor-aal2": {
+      id: "88888888-8888-4888-8888-888888888888",
+      email: "admin-nomfa@example.com",
+      full_name: "SA Deleted Factor",
+      role: "super_admin",
+      is_active: true,
+      aal: "aal2",
+      hasVerifiedMfaFactor: false,
+    },
+  };
+
+  const mfaLookup: AuthLookup = {
+    async getUserByToken(token: string) {
+      const a = mfaActors[token];
+      return a ? { id: a.id, email: a.email, aal: a.aal, hasVerifiedMfaFactor: a.hasVerifiedMfaFactor } : null;
+    },
+    async getProfileById(id: string) {
+      return Object.values(mfaActors).find((a) => a.id === id) ?? null;
+    },
+  };
+
+  const adminListHandler = makeGetAdminRegistrationsHandler(
+    {
+      authLookup: mfaLookup,
+      rateLimiter: allowLimiter,
+      async queryRegistrations() {
+        return { rows: [], total: 0, summary: {}, analytics: null, auditLogs: [], error: null };
+      },
+    },
+    ["http://localhost:3000"],
+  );
+
+  const coordListHandler = makeGetCoordinatorRegistrationsHandler(
+    {
+      authLookup: mfaLookup,
+      rateLimiter: allowLimiter,
+      async getAssignedCompetitionIds() {
+        return ["robowar"];
+      },
+      async fetchCoordinatorRegistrations() {
+        return { rows: [], total: 0, analytics: null, error: null };
+      },
+    },
+    ["http://localhost:3000"],
+  );
+
+  // Account with verified TOTP factor must never use AAL1 token across admin OR coordinator endpoints
+  const downgradeRes = await adminListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-sa-enrolled-aal1"));
+  assertEquals(downgradeRes.status, 403);
+  assertEquals((await downgradeRes.json()).error.code, "MFA_REQUIRED");
+
+  const coordDowngradeRes = await coordListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-sa-enrolled-aal1"));
+  assertEquals(coordDowngradeRes.status, 403);
+  assertEquals((await coordDowngradeRes.json()).error.code, "MFA_REQUIRED");
+
+  const coordRoleDowngradeRes = await coordListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-coord-enrolled-aal1"));
+  assertEquals(coordRoleDowngradeRes.status, 403);
+  assertEquals((await coordRoleDowngradeRes.json()).error.code, "MFA_REQUIRED");
+
+  // Same accounts with AAL2 pass
+  assertEquals((await adminListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-sa-enrolled-aal2"))).status, 200);
+  assertEquals((await coordListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-sa-enrolled-aal2"))).status, 200);
+  assertEquals((await coordListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-coord-enrolled-aal2"))).status, 200);
+
+  // createSupabaseAuthLookup treats only verified interactive factors (totp/webauthn/phone) as MFA enrolled, ignoring recovery_code
+  const headerB64 = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const payloadAal1B64 = btoa(JSON.stringify({ sub: "u1", aal: "aal1" })).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const fakeAal1Jwt = `${headerB64}.${payloadAal1B64}.sig`;
+
+  const recoveryOnlyLookup = createSupabaseAuthLookup({
+    auth: {
+      async getUser() {
+        return {
+          data: {
+            user: {
+              id: "u1",
+              email: "u1@example.com",
+              factors: [{ factor_type: "recovery_code", status: "verified" }],
+            },
+          },
+          error: null,
+        };
+      },
+    },
+  });
+  const recoveryActor = await recoveryOnlyLookup.getUserByToken(fakeAal1Jwt);
+  assertEquals(recoveryActor?.aal, "aal1");
+  assertEquals(recoveryActor?.hasVerifiedMfaFactor, false);
+
+  const totpEnrolledLookup = createSupabaseAuthLookup({
+    auth: {
+      async getUser() {
+        return {
+          data: {
+            user: {
+              id: "u1",
+              email: "u1@example.com",
+              factors: [{ factor_type: "totp", status: "verified" }],
+            },
+          },
+          error: null,
+        };
+      },
+    },
+  });
+  const totpActor = await totpEnrolledLookup.getUserByToken(fakeAal1Jwt);
+  assertEquals(totpActor?.hasVerifiedMfaFactor, true);
+
+  // Staged rollout allows admin without enrolled MFA while ENFORCE_PRIVILEGED_MFA is unset
+  assertEquals((await adminListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-admin-no-mfa-aal1"))).status, 200);
+
+  // Strict owner policy rejects AAL1 even without enrolled factor
+  Deno.env.set("ENFORCE_PRIVILEGED_MFA", "true");
+  try {
+    const strictRes = await adminListHandler(makeJsonReq("http://localhost/fn", "GET", "tok-admin-no-mfa-aal1"));
+    assertEquals(strictRes.status, 403);
+    assertEquals((await strictRes.json()).error.code, "MFA_REQUIRED");
+  } finally {
+    Deno.env.delete("ENFORCE_PRIVILEGED_MFA");
+  }
+
+  // Hosted Supabase CORS fails closed when ALLOWED_ORIGINS is omitted
+  assertEquals(getAllowedOrigins("", "https://example.supabase.co").length, 0);
+  assertEquals(getAllowedOrigins("", "http://127.0.0.1:54321").length, 2);
+
+  // DB-backed strict MFA policy (Migration 006 get_privileged_mfa_policy RPC) enforces AAL2 without env override
+  const dbStrictLookup = createSupabaseAuthLookup({
+    auth: {
+      async getUser() {
+        return {
+          data: {
+            user: {
+              id: "88888888-8888-4888-8888-888888888888",
+              email: "admin-nomfa@example.com",
+              factors: [],
+            },
+          },
+          error: null,
+        };
+      },
+    },
+    async rpc(fnName: string) {
+      if (fnName === "get_privileged_mfa_policy") return { data: true, error: null };
+      return { data: null, error: null };
+    },
+  });
+  assertEquals((await dbStrictLookup.getUserByToken(fakeAal1Jwt))?.enforcePrivilegedMfa, true);
+
+  // Unexpected RPC error on configured DB fails closed to strict MFA
+  const rpcErrorLookup = createSupabaseAuthLookup({
+    auth: {
+      async getUser() {
+        return {
+          data: { user: { id: "u1", factors: [] } },
+          error: null,
+        };
+      },
+    },
+    async rpc() {
+      return { data: null, error: { code: "XX000", message: "db blip" } };
+    },
+  });
+  assertEquals((await rpcErrorLookup.getUserByToken(fakeAal1Jwt))?.enforcePrivilegedMfa, true);
+
+  // Strict DB policy blocks AAL1 unenrolled admin across privileged Edge Functions
+  const strictActorHandler = makeManageAdminsHandler(
+    {
+      authLookup: {
+        async getUserByToken(token: string) {
+          const base = await mfaLookup.getUserByToken(token);
+          return base ? { ...base, enforcePrivilegedMfa: true } : null;
+        },
+        async getProfileById() {
+          return {
+            id: "88888888-8888-4888-8888-888888888888",
+            email: "admin-nomfa@example.com",
+            full_name: "SA No MFA",
+            role: "super_admin",
+            is_active: true,
+          };
+        },
+      },
+      rateLimiter: allowLimiter,
+      async listStaffAndAssignments() {
+        return { staff: [], assignments: [], error: null };
+      },
+      async findProfileByEmailOrId() {
+        return null;
+      },
+      async updateProfileRoleStatus() {
+        return null;
+      },
+      async assignCoordinator() {
+        return { data: null, error: null };
+      },
+      async removeCoordinatorAssignment() {
+        return null;
+      },
+      async writeAuditLog() {},
+    },
+    ["http://localhost:3000"],
+  );
+  const strictManageRes = await strictActorHandler(makeJsonReq("http://localhost/fn", "GET", "tok-admin-no-mfa-aal1"));
+  assertEquals(strictManageRes.status, 403);
+  assertEquals((await strictManageRes.json()).error.code, "MFA_REQUIRED");
+
+  // Mid-session AAL2 JWT with a deleted sole factor is also rejected immediately under strict mode
+  const strictMidSessionRes = await strictActorHandler(makeJsonReq("http://localhost/fn", "GET", "tok-sa-deleted-factor-aal2"));
+  assertEquals(strictMidSessionRes.status, 403);
+  assertEquals((await strictMidSessionRes.json()).error.code, "MFA_REQUIRED");
+});
+
+Deno.test("get-admin-registrations validates audit_action, returns audit_pagination, and sets CSV truncation headers", async () => {
+  const handler = makeGetAdminRegistrationsHandler(
+    {
+      authLookup,
+      rateLimiter: allowLimiter,
+      async queryRegistrations(q) {
+        return {
+          rows: [
+            {
+              pass_code: "TR26-900",
+              full_name: "Audit Delegate",
+              roll_number: "24109",
+              phone: "9876543210",
+              college: "BCE",
+              branch: "CSE",
+              primary_arena_id: "robowar",
+              team_size: 1,
+              accommodation_id: "none",
+              computed_total_inr: 50,
+              status: "VERIFIED",
+              payments: [],
+              created_at: "2026-11-25T00:00:00Z",
+            },
+          ],
+          total: 2500,
+          summary: { total_registrations: 2500 },
+          analytics: null,
+          auditLogs: [{ id: 1, action: q.auditAction ?? "COMPETITION_UPDATED" }],
+          auditTotal: 45,
+          error: null,
+        };
+      },
+    },
+    ["http://localhost:3000"],
+  );
+
+  const badAuditRes = await handler(makeJsonReq("http://localhost/fn?audit_action=drop+table", "GET", "tok-admin"));
+  assertEquals(badAuditRes.status, 400);
+
+  const pagedAuditRes = await handler(makeJsonReq("http://localhost/fn?audit_page=2&audit_limit=30&audit_action=COMPETITION_UPDATED", "GET", "tok-admin"));
+  assertEquals(pagedAuditRes.status, 200);
+  const pagedBody = await pagedAuditRes.json();
+  assertEquals(pagedBody.audit_pagination.page, 2);
+  assertEquals(pagedBody.audit_pagination.total, 45);
+  assertEquals(pagedBody.audit_pagination.total_pages, 2);
+
+  const csvRes = await handler(makeJsonReq("http://localhost/fn?format=csv", "GET", "tok-admin"));
+  assertEquals(csvRes.status, 200);
+  assertEquals(csvRes.headers.get("X-Total-Count"), "2500");
+  assertEquals(csvRes.headers.get("X-Export-Truncated"), "true");
+
+  const sanitized = sanitizeAuditLogRow({
+    id: 99,
+    actor_id: "55555555-5555-4555-8555-555555555555",
+    actor_role: "super_admin",
+    actor: { full_name: "Super Admin" },
+    action: "COMPETITION_UPDATED",
+    target_table: "competitions",
+    target_id: "robowar",
+    details: {
+      venue: "Arena A",
+      fee_inr: 100,
+      email: "secret@example.com",
+      phone: "9999999999",
+      utr_number: "123456789012",
+      token: "leak",
+    },
+    created_at: "2026-11-25T00:00:00Z",
+  });
+  assertEquals(sanitized.details, { venue: "Arena A", fee_inr: 100 });
+});
+
+Deno.test("authenticateRequest returns 503 on auth backend failure and atomic manage-competitions avoids duplicate audit writes", async () => {
+  const { authenticateRequest, AuthBackendError } = await import("../functions/_shared/auth.ts");
+  const { buildCorsHeaders } = await import("../functions/_shared/cors.ts");
+  const { headers } = buildCorsHeaders(null, ["http://localhost:3000"]);
+
+  const outRes = await authenticateRequest(
+    makeJsonReq("http://localhost/fn", "GET", "any-token"),
+    {
+      async getUserByToken() {
+        throw new AuthBackendError("GoTrue 503");
+      },
+      async getProfileById() {
+        return null;
+      },
+    },
+    headers,
+  );
+  assertEquals(outRes.ok, false);
+  if (!outRes.ok) {
+    assertEquals(outRes.response.status, 503);
+    assertEquals((await outRes.response.json()).error.code, "AUTH_UNAVAILABLE");
+  }
+
+  let duplicateAuditCalls = 0;
+  const atomicCompHandler = makeManageCompetitionsHandler(
+    {
+      authLookup,
+      rateLimiter: allowLimiter,
+      async listCatalog() {
+        return { competitions: [], accommodationPlans: [], error: null };
+      },
+      async updateCompetition(id, updates) {
+        return { data: { id, ...updates }, error: null, audited: true };
+      },
+      async updateAccommodationPlan(id, updates) {
+        return { data: { id, ...updates }, error: null, audited: true };
+      },
+      async writeAuditLog() {
+        duplicateAuditCalls += 1;
+      },
+    },
+    ["http://localhost:3000"],
+  );
+  const compPatchRes = await atomicCompHandler(makeJsonReq("http://localhost/fn", "PATCH", "tok-super", { id: "robowar", fee_inr: 150 }));
+  assertEquals(compPatchRes.status, 200);
+  assertEquals(duplicateAuditCalls, 0);
+
+  const failingCoordHandler = makeGetCoordinatorRegistrationsHandler(
+    {
+      authLookup,
+      rateLimiter: allowLimiter,
+      async getAssignedCompetitionIds() {
+        throw new Error("DB connection lost");
+      },
+      async fetchCoordinatorRegistrations() {
+        return { rows: [], total: 0, analytics: null, error: null };
+      },
+    },
+    ["http://localhost:3000"],
+  );
+  const coordErrRes = await failingCoordHandler(makeJsonReq("http://localhost/fn", "GET", "tok-coord"));
+  assertEquals(coordErrRes.status, 500);
 });

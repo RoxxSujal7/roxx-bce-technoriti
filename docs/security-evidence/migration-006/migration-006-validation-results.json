@@ -1,0 +1,60 @@
+{
+  "pgVersion": "PostgreSQL 19.0 (PGlite 0.6.0) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a), 32-bit",
+  "migrations": [
+    {
+      "file": "20261125000001_initial_schema.sql",
+      "exitCode": 0,
+      "durationMs": 89
+    },
+    {
+      "file": "20261125000002_rls_and_functions.sql",
+      "exitCode": 0,
+      "durationMs": 27
+    },
+    {
+      "file": "20261125000003_seed_catalog.sql",
+      "exitCode": 0,
+      "durationMs": 5
+    },
+    {
+      "file": "20261125000004_admin_analytics_rpcs.sql",
+      "exitCode": 0,
+      "durationMs": 2
+    },
+    {
+      "file": "20261125000005_mfa_rls_and_privilege_hardening.sql",
+      "exitCode": 0,
+      "durationMs": 13
+    },
+    {
+      "file": "20261125000006_strict_mfa_policy_and_session_hardening.sql",
+      "exitCode": 0,
+      "durationMs": 22
+    }
+  ],
+  "migration006IdempotentPreservedPolicy": true,
+  "scenarios": [
+    {
+      "id": "DB-17",
+      "scenario": "Lockout-safe cutover refuses strict MFA until active super_admin enrolls verified TOTP",
+      "expected": "Refused (22023) and policy stays false",
+      "actual": "DENIED (code=22023: Cannot enable strict privileged MFA: enroll and verify a TOTP/WebAuthn factor for at least one active super_admin first.)",
+      "passed": true
+    },
+    {
+      "id": "DB-18",
+      "scenario": "Strict MFA PostgREST RLS denies unenrolled AAL1, deleted-factor AAL1, and stale deleted-factor AAL2 JWTs while allowing verified AAL2",
+      "expected": "0 rows across unenrolled/deleted-factor (AAL1 & stale AAL2); >=1 row for verified AAL2 super_admin",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-19",
+      "scenario": "Client roles blocked from security_settings & policy RPCs; singleton protected from DELETE",
+      "expected": "42501 across all",
+      "actual": "DENIED (code=42501: permission denied for table security_settings)",
+      "passed": true
+    }
+  ],
+  "allPassed": true
+}

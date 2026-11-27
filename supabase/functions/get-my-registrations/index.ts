@@ -33,12 +33,12 @@ Deno.serve((req) => {
           .eq("coordinator_id", userId),
       ]);
 
-      if (profileRes.error || regRes.error) {
+      if (profileRes.error || regRes.error || coordRes.error) {
         return {
           profile: null,
           registrations: [],
           coordinatorAssignments: [],
-          error: profileRes.error?.message ?? regRes.error?.message ?? "Query failed",
+          error: profileRes.error?.message ?? regRes.error?.message ?? coordRes.error?.message ?? "Query failed",
         };
       }
 

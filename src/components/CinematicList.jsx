@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { cn } from "../lib/utils";
 import "./CinematicList.scss";
 
@@ -37,19 +37,10 @@ export function CinematicListItem({
   onClick,
 }) {
   const isFaq = variant === "faq" || Boolean(answer);
+  const panelId = useId();
 
   return (
     <div
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      aria-expanded={isExpanded}
       className={cn(
         "cinematic-list-item group",
         isFaq && "variant-faq",
@@ -61,42 +52,51 @@ export function CinematicListItem({
         <div className="cinematic-bg-layer" aria-hidden="true">
           <img
             src={src}
-            alt={alt || title}
+            alt=""
             loading="lazy"
+            decoding="async"
             className="cinematic-bg-img"
           />
           <div className="cinematic-bg-gradient" />
         </div>
       )}
 
-      {/* Main Row Content */}
-      <div className="cinematic-content">
-        <div className="cinematic-left">
-          <span className="cinematic-item-num">{id}</span>
-          <div className="cinematic-text-col">
-            <h2 className="cinematic-item-title">{title}</h2>
-            {location && <span className="cinematic-mobile-location">{location}</span>}
-          </div>
-        </div>
+      {/* Semantic Interactive Row Trigger */}
+      <button
+        type="button"
+        onClick={onClick}
+        aria-expanded={isExpanded}
+        aria-controls={isFaq && answer ? panelId : undefined}
+        className="cinematic-row-trigger"
+      >
+        <span className="cinematic-content">
+          <span className="cinematic-left">
+            <span className="cinematic-item-num">{id}</span>
+            <span className="cinematic-text-col">
+              <span className="cinematic-item-title">{title}</span>
+              {location && <span className="cinematic-mobile-location">{location}</span>}
+            </span>
+          </span>
 
-        <div className="cinematic-right">
-          {location && <span className="cinematic-desktop-location">{location}</span>}
-          <div className="cinematic-arrow-btn" aria-hidden="true">
-            <svg
-              className="cinematic-arrow-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-      </div>
+          <span className="cinematic-right">
+            {location && <span className="cinematic-desktop-location">{location}</span>}
+            <span className="cinematic-arrow-btn" aria-hidden="true">
+              <svg
+                className="cinematic-arrow-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </span>
+          </span>
+        </span>
+      </button>
 
       {/* Expanded Meta Footer (Event Mode) */}
       {!isFaq && (prize || venue || teamSize) && (
@@ -107,14 +107,18 @@ export function CinematicListItem({
             {teamSize && <span className="cinematic-pill">{teamSize}</span>}
           </div>
           <span className="cinematic-action-hint">
-            Click to view full rules & registration ➔
+            Select row to view full rules &amp; registration ➔
           </span>
         </div>
       )}
 
       {/* Expanded Answer Body (FAQ Mode) */}
       {isFaq && answer && (
-        <div className="cinematic-faq-answer-wrapper">
+        <div
+          id={panelId}
+          hidden={!isExpanded}
+          className="cinematic-faq-answer-wrapper"
+        >
           <div className="cinematic-faq-answer-content">
             {answer}
           </div>

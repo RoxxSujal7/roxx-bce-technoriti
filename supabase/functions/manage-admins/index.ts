@@ -27,30 +27,84 @@ Deno.serve((req) => {
     },
     async findProfileByEmailOrId({ id, email }) {
       const query = admin.from("profiles").select("id, email, role, is_active");
-      const { data } = id
+      const { data, error } = id
         ? await query.eq("id", id).maybeSingle()
         : await query.eq("email", email ?? "").maybeSingle();
+      if (error) {
+        throw new Error(`Profile lookup failed: ${error.message}`);
+      }
       return data ?? null;
     },
-    async updateProfileRoleStatus(targetId, updates) {
-      const { error } = await admin.from("profiles").update(updates).eq("id", targetId);
-      return error ? error.message : null;
+    async updateProfileRoleStatus(targetId, updates, actorId) {
+      if (updates.role) {
+        const { error } = await admin.rpc("admin_set_profile_role_tx", {
+          p_actor_id: actorId,
+          p_target_id: targetId,
+          p_next_role: updates.role,
+        });
+        return error ? { error: error.message, audited: false } : { error: null, audited: true };
+      }
+
+      if (typeof updates.is_active === "boolean") {
+        const { data: prevRow, error: prevErr } = await admin
+          .from("profiles")
+          .select("is_active")
+          .eq("id", targetId)
+          .maybeSingle();
+        if (prevErr || !prevRow) {
+          return { error: prevErr?.message ?? "Profile not found", audited: false };
+        }
+
+        // Update GoTrue ban state first so failures never leave an inconsistent/audited DB mutation
+        if (typeof admin.auth?.admin?.updateUserById === "function") {
+          try {
+            const { error: banErr } = await admin.auth.admin.updateUserById(targetId, {
+              ban_duration: updates.is_active ? "none" : "876000h",
+            });
+            if (banErr) {
+              return { error: banErr.message || "Failed to update auth session ban state.", audited: false };
+            }
+          } catch (err) {
+            return { error: err instanceof Error ? err.message : "Failed to update auth session ban state.", audited: false };
+          }
+        }
+
+        const { error: txErr } = await admin.rpc("admin_set_profile_active_tx", {
+          p_actor_id: actorId,
+          p_target_id: targetId,
+          p_is_active: updates.is_active,
+        });
+        if (txErr) {
+          if (typeof admin.auth?.admin?.updateUserById === "function") {
+            const { error: revertErr } = await admin.auth.admin.updateUserById(targetId, {
+              ban_duration: prevRow.is_active ? "none" : "876000h",
+            });
+            if (revertErr) {
+              console.error(JSON.stringify({ event: "auth_ban_rollback_failed", targetId }));
+            }
+          }
+          return { error: txErr.message, audited: false };
+        }
+        return { error: null, audited: true };
+      }
+
+      return { error: "No supported profile fields specified", audited: false };
     },
     async assignCoordinator(coordinatorId, competitionId, actorId) {
-      const { data, error } = await admin
-        .from("coordinator_assignments")
-        .upsert(
-          { coordinator_id: coordinatorId, competition_id: competitionId, assigned_by: actorId },
-          { onConflict: "coordinator_id,competition_id" },
-        )
-        .select("*")
-        .single();
-      if (error) return { data: null, error: error.message };
-      return { data, error: null };
+      const { data, error } = await admin.rpc("admin_assign_coordinator_tx", {
+        p_actor_id: actorId,
+        p_coordinator_id: coordinatorId,
+        p_competition_id: competitionId,
+      });
+      if (error) return { data: null, error: error.message, audited: false };
+      return { data, error: null, audited: true };
     },
-    async removeCoordinatorAssignment(assignmentId) {
-      const { error } = await admin.from("coordinator_assignments").delete().eq("id", assignmentId);
-      return error ? error.message : null;
+    async removeCoordinatorAssignment(assignmentId, actorId) {
+      const { error } = await admin.rpc("admin_remove_coordinator_tx", {
+        p_actor_id: actorId,
+        p_assignment_id: assignmentId,
+      });
+      return error ? { error: error.message, audited: false } : { error: null, audited: true };
     },
     async writeAuditLog(entry) {
       const { error } = await admin.from("audit_logs").insert(entry);

@@ -14,7 +14,7 @@
   }
 
   .text-purple {
-    color: #BE00D7 !important;
+    color: #e879f9 !important;
   }
 
   .logistics-info-card,
@@ -23,15 +23,21 @@
     border: 1px solid rgba(190, 0, 215, 0.25);
 
     .phone-btn {
-      color: #BE00D7;
+      color: #e879f9;
       text-decoration: none;
       font-weight: 700;
       font-size: 1.05rem;
       transition: color 0.2s ease;
 
       &:hover {
-        color: #e070ff;
+        color: #f5d0fe;
         text-decoration: underline;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #e879f9;
+        outline-offset: 2px;
+        border-radius: 4px;
       }
     }
   }

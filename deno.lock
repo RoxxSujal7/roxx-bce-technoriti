@@ -29,6 +29,7 @@
         "npm:@testing-library/jest-dom@^5.16.5",
         "npm:@testing-library/react@^13.4.0",
         "npm:@testing-library/user-event@^13.5.0",
+        "npm:autoprefixer@10.4.11",
         "npm:bootstrap@^5.2.1",
         "npm:class-variance-authority@~0.7.1",
         "npm:clsx@^2.1.1",
@@ -46,6 +47,7 @@
         "npm:recharts@^2.15.4",
         "npm:sass@^1.54.9",
         "npm:tailwind-merge@^3.7.1",
+        "npm:tailwindcss@3.1.8",
         "npm:web-vitals@^2.1.4"
       ]
     }

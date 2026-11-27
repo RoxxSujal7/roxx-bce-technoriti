@@ -161,8 +161,15 @@ function Copy({ slide, shown }) {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => {
     if (!shown) return;
-    const id = requestAnimationFrame(() => requestAnimationFrame(() => setOn(true)));
-    return () => cancelAnimationFrame(id);
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setOn(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, [shown]);
   return (
     <div className={"clc-copy" + (on ? " clc-in" : "")} aria-live="polite">

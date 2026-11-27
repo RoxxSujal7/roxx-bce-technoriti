@@ -8,6 +8,7 @@ import {
   History,
   Home,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
   ShieldCheck,
   TicketCheck,
@@ -99,6 +100,12 @@ export function App1Sidebar({
       key: "audit",
       label: "Audit Logs",
       icon: History,
+      roles: ["super_admin", "admin"],
+    },
+    {
+      key: "security",
+      label: "Security & MFA",
+      icon: LockKeyhole,
       roles: ["super_admin", "admin"],
     },
   ];

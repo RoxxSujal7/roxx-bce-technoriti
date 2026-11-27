@@ -43,7 +43,7 @@ export const TECHNORITI_ACCOMMODATION_PLANS: PricingPlan[] = [
     ],
     plan_recommended: false,
     cta_label: "Book Lodging",
-    cta_link: "/register",
+    cta_link: "/register?plan=lodging",
   },
   {
     plan_name: "Mess & Dining",
@@ -59,7 +59,7 @@ export const TECHNORITI_ACCOMMODATION_PLANS: PricingPlan[] = [
     ],
     plan_recommended: false,
     cta_label: "Choose Meals",
-    cta_link: "/register",
+    cta_link: "/register?plan=mess",
   },
   {
     plan_name: "Complete Stay",
@@ -75,7 +75,7 @@ export const TECHNORITI_ACCOMMODATION_PLANS: PricingPlan[] = [
     ],
     plan_recommended: true,
     cta_label: "Book Complete Stay",
-    cta_link: "/register",
+    cta_link: "/register?plan=both",
   },
 ];
 
@@ -258,7 +258,7 @@ const Pricing: React.FC<PricingProps> = ({
                         <div className="flex items-center justify-between gap-2">
                           <CardTitle
                             className="text-2xl font-bold tracking-tight"
-                            style={{ color: isFeatured ? "#BE00D7" : "#ffffff" }}
+                            style={{ color: isFeatured ? "#e879f9" : "#ffffff" }}
                           >
                             {plan.plan_name}
                           </CardTitle>
@@ -266,7 +266,7 @@ const Pricing: React.FC<PricingProps> = ({
                           {isFeatured && (
                             <Badge
                               className="py-1 px-3 text-xs font-bold uppercase tracking-wider leading-5 w-fit h-7 flex items-center gap-1.5 border-0 text-white"
-                              style={{ backgroundColor: "#BE00D7" }}
+                              style={{ backgroundColor: "#9e00b2" }}
                             >
                               <Flame size={15} /> RECOMMENDED
                             </Badge>
@@ -308,14 +308,14 @@ const Pricing: React.FC<PricingProps> = ({
                         ))}
                       </ul>
 
-                      <Button
+                        <Button
                         className={cn(
                           "w-full h-12 cursor-pointer font-semibold rounded-xl text-base transition-all",
                           isFeatured
                             ? "text-white shadow-lg shadow-purple-900/30 hover:opacity-95"
                             : "bg-white/5 border border-white/20 text-white hover:bg-white/10 hover:border-white/35"
                         )}
-                        style={isFeatured ? { backgroundColor: "#BE00D7" } : undefined}
+                        style={isFeatured ? { backgroundColor: "#9e00b2" } : undefined}
                         asChild
                       >
                         <Link to={plan.cta_link || "/register"}>

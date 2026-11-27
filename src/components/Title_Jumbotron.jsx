@@ -14,10 +14,13 @@ const Title_Jumbotron = (props) => {
                 <div className="empty_space_title">
                 </div>
                 <div className="row synergy_is">
-                    <h1 className='synergy_is_text'>{props.bigHeader}</h1>
+                    <h1 className='synergy_is_text'>
+                        {props.bigHeader}
+                        {props.bigHeaderCaps ? <span className='visually-hidden'> {props.bigHeaderCaps}</span> : null}
+                    </h1>
                 </div>
-                <div className="row back_dot">
-                    <h1 className='back_dot_text'>{props.bigHeaderCaps}<span className='dot_color'>.</span></h1>
+                <div className="row back_dot" aria-hidden="true">
+                    <div className='back_dot_text'>{props.bigHeaderCaps}<span className='dot_color'>.</span></div>
                 </div>
 
                 <div className="row intro_text">
@@ -35,9 +38,14 @@ const Title_Jumbotron = (props) => {
         <div className="row icon-bt-row position-absolute bottom-0 start-50 translate-middle">
             <div className="col"></div>
             <div className="col icon_col">
-                <span className="down_arrow_icon_span">
-                    <BsArrowDownCircle className='down_arrow_icon' onClick={slideDown} />
-                </span>
+                <button
+                    type="button"
+                    className="down_arrow_icon_span bg-transparent border-0 p-0"
+                    onClick={slideDown}
+                    aria-label="Scroll down to explore"
+                >
+                    <BsArrowDownCircle className='down_arrow_icon' aria-hidden="true" />
+                </button>
             </div>
             <div className="col"></div>
         </div>

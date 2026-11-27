@@ -21,7 +21,8 @@
     "jsx": "react-jsx",
     "baseUrl": "src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["*"],
+      "@shadcn/react/questionnaire": ["../node_modules/@shadcn/react/dist/questionnaire/index.d.ts"]
     }
   },
   "include": [

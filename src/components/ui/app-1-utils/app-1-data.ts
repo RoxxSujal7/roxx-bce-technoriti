@@ -8,7 +8,8 @@ export type AdminSectionKey =
   | "pending-verification"
   | "competitions"
   | "staff"
-  | "audit";
+  | "audit"
+  | "security";
 
 export interface DashboardStatItem {
   id: string;
@@ -126,8 +127,13 @@ export function buildAdminUserProfile(
   };
 }
 
+function safeFinite(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function formatInr(amount: number): string {
-  return `₹${Math.max(0, Math.round(amount)).toLocaleString("en-IN")}`;
+  return `₹${Math.max(0, Math.round(safeFinite(amount))).toLocaleString("en-IN")}`;
 }
 
 export function getDashboardStats(params: {
@@ -343,10 +349,10 @@ export function getRegistrationTrends(params: {
   const series: TrendPoint[] = rawTrends.map((pt: Record<string, any>) => ({
     week_start: String(pt.week_start || ""),
     week: String(pt.week || pt.week_start || ""),
-    registrations: Math.max(0, Number(pt.registrations ?? 0)),
+    registrations: Math.max(0, safeFinite(pt.registrations)),
     verified: Math.max(
       0,
-      Number(role === "coordinator" ? (pt.verified_passes ?? 0) : (pt.payments_verified ?? 0)),
+      safeFinite(role === "coordinator" ? pt.verified_passes : pt.payments_verified),
     ),
   }));
 
@@ -355,6 +361,33 @@ export function getRegistrationTrends(params: {
     timezone: String(analytics?.timezone || "Asia/Kolkata"),
     series,
     hasRecords,
+  };
+}
+
+function mapCompetitionOverviewItem(
+  c: Record<string, any>,
+  staticById: Map<string, any>,
+  includeCounts: boolean,
+): CompetitionOverviewItem {
+  const staticComp = staticById.get(String(c.id));
+  const isActive = c.is_active !== false;
+  const regCount = includeCounts ? safeFinite(c.registration_count) : null;
+  const verCount = includeCounts ? safeFinite(c.verified_count) : null;
+  const partCount = includeCounts ? safeFinite(c.participant_count) : null;
+  const cap = safeFinite(c.capacity_limit, 0);
+  return {
+    id: String(c.id),
+    title: String(c.title || staticComp?.title || c.id),
+    category: String(c.category || staticComp?.category || "Arena"),
+    statusLabel: isActive ? "Open" : "Paused",
+    badgeVariant: isActive ? "default" : "secondary",
+    registrationCount: regCount,
+    verifiedCount: verCount,
+    participantCount: partCount,
+    verificationRatePct: regCount !== null && verCount !== null ? (regCount > 0 ? Math.round((verCount / regCount) * 100) : 0) : null,
+    capacityLimit: includeCounts && cap > 0 ? cap : null,
+    eventDate: String(c.event_date || staticComp?.date || "Schedule TBA"),
+    venue: String(c.venue || staticComp?.venue || "BCE Campus"),
   };
 }
 
@@ -372,31 +405,7 @@ export function getCompetitionOverview(params: {
   const staticById = new Map(competitionsList.map((c) => [c.id, c]));
 
   if (rawOverview.length > 0) {
-    return rawOverview.map((c: Record<string, any>) => {
-      const staticComp = staticById.get(String(c.id));
-      const regCount = Number(c.registration_count ?? 0);
-      const verCount = Number(c.verified_count ?? 0);
-      const partCount = Number(c.participant_count ?? 0);
-      const isActive = c.is_active !== false;
-      const capacityLimit =
-        typeof c.capacity_limit === "number" && c.capacity_limit > 0
-          ? Number(c.capacity_limit)
-          : null;
-      return {
-        id: String(c.id),
-        title: String(c.title || staticComp?.title || c.id),
-        category: String(c.category || staticComp?.category || "Arena"),
-        statusLabel: isActive ? "Open" : "Paused",
-        badgeVariant: isActive ? "default" : "secondary",
-        registrationCount: regCount,
-        verifiedCount: verCount,
-        participantCount: partCount,
-        verificationRatePct: regCount > 0 ? Math.round((verCount / regCount) * 100) : 0,
-        capacityLimit,
-        eventDate: String(c.event_date || staticComp?.date || "Schedule TBA"),
-        venue: String(c.venue || staticComp?.venue || "BCE Campus"),
-      };
-    });
+    return rawOverview.map((c: Record<string, any>) => mapCompetitionOverviewItem(c, staticById, true));
   }
 
   const baseList =
@@ -406,24 +415,7 @@ export function getCompetitionOverview(params: {
         ? catalogCompetitions
         : competitionsList;
 
-  return baseList.slice(0, 6).map((c: Record<string, any>) => {
-    const staticComp = staticById.get(String(c.id));
-    const isActive = c.is_active !== false;
-    return {
-      id: String(c.id),
-      title: String(c.title || staticComp?.title || c.id),
-      category: String(c.category || staticComp?.category || "Arena"),
-      statusLabel: isActive ? "Open" : "Paused",
-      badgeVariant: isActive ? "default" : "secondary",
-      registrationCount: null,
-      verifiedCount: null,
-      participantCount: null,
-      verificationRatePct: null,
-      capacityLimit: null,
-      eventDate: String(c.event_date || staticComp?.date || "Schedule TBA"),
-      venue: String(c.venue || staticComp?.venue || "BCE Campus"),
-    };
-  });
+  return baseList.slice(0, 6).map((c: Record<string, any>) => mapCompetitionOverviewItem(c, staticById, false));
 }
 
 function formatRelativeTime(isoDate: string): string {
@@ -492,6 +484,7 @@ export function getRecentAdminActivity(params: {
         actionText = `assigned coordinator to ${details.competition_id || "arena"}`;
         break;
       case "COORDINATOR_REMOVED":
+      case "COORDINATOR_UNASSIGNED":
         actionText = `removed coordinator from ${details.competition_id || "arena"}`;
         break;
       default:
@@ -499,6 +492,7 @@ export function getRecentAdminActivity(params: {
     }
 
     const createdAt = String(log.created_at || "");
+    const createdTs = createdAt ? new Date(createdAt).getTime() : NaN;
     return {
       id: String(log.id),
       actorName,
@@ -506,7 +500,7 @@ export function getRecentAdminActivity(params: {
       actorRole: actorRoleLabel,
       actionText,
       timeText: formatRelativeTime(createdAt),
-      exactTimestamp: createdAt ? new Date(createdAt).toLocaleString("en-IN") : "",
+      exactTimestamp: Number.isFinite(createdTs) ? new Date(createdTs).toLocaleString("en-IN") : "",
     };
   });
 }

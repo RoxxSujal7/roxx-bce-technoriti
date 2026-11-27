@@ -18,13 +18,21 @@ Deno.serve((req) => {
       }
       return { competitions: cRes.data ?? [], accommodationPlans: aRes.data ?? [], error: null };
     },
-    async updateCompetition(id, updates) {
-      const { data, error } = await admin.from("competitions").update(updates).eq("id", id).select("*").single();
-      return error ? { data: null, error: error.message } : { data, error: null };
+    async updateCompetition(id, updates, actorId) {
+      const { data, error } = await admin.rpc("admin_update_competition_tx", {
+        p_actor_id: actorId,
+        p_competition_id: id,
+        p_updates: updates,
+      });
+      return error ? { data: null, error: error.message, audited: false } : { data, error: null, audited: true };
     },
-    async updateAccommodationPlan(id, updates) {
-      const { data, error } = await admin.from("accommodation_plans").update(updates).eq("id", id).select("*").single();
-      return error ? { data: null, error: error.message } : { data, error: null };
+    async updateAccommodationPlan(id, updates, actorId) {
+      const { data, error } = await admin.rpc("admin_update_accommodation_tx", {
+        p_actor_id: actorId,
+        p_plan_id: id,
+        p_updates: updates,
+      });
+      return error ? { data: null, error: error.message, audited: false } : { data, error: null, audited: true };
     },
     async writeAuditLog(entry) {
       const { error } = await admin.from("audit_logs").insert(entry);

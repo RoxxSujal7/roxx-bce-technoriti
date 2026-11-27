@@ -1,0 +1,26 @@
+[2026-11-25T10:17:02.272Z] Engine: PostgreSQL 19.0 (PGlite 0.6.0) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a), 32-bit
+MIGRATION 20261125000001_initial_schema.sql -> exit=0 durationMs=61
+MIGRATION 20261125000002_rls_and_functions.sql -> exit=0 durationMs=20
+MIGRATION 20261125000003_seed_catalog.sql -> exit=0 durationMs=5
+MIGRATION 20261125000004_admin_analytics_rpcs.sql -> exit=0 durationMs=3
+MIGRATION 20261125000005_mfa_rls_and_privilege_hardening.sql -> exit=0 durationMs=9
+MIGRATION 005 IDEMPOTENT RE-RUN -> exit=0
+SEED COMPETITIONS=29, ACCOMMODATION_PLANS=none:0,lodging:50,mess:125,both:175
+SIGNUP TRIGGER ROLE CHECK=true
+STAGED ENROLLED-RECOVERY-ONLY ADMIN AAL1 REGISTRATIONS COUNT=2 (expected=2 when strict PostgREST policy inactive)
+DB-01 | PASS | Anonymous user reads private registrations | actual=DENIED (code=42501: permission denied for table registrations)
+DB-02 | PASS | Participant reads another participant records | actual=ALLOWED (rows=0)
+DB-03 | PASS | Participant changes their profile role | actual=DENIED (code=42501: permission denied for table profiles)
+DB-04 | PASS | Coordinator reads unassigned arena / global registrations via PostgREST | actual=ALLOWED (rows=0)
+DB-05 | PASS | Coordinator accesses global payment records | actual=ALLOWED (rows=0)
+DB-06 | PASS | Admin promotes themselves to Super Admin | actual=DENIED (code=42501: permission denied for table profiles)
+DB-07 | PASS | Admin/Super Admin reads raw audit_logs or reads/mutates audit_logs_id_seq directly | actual=DENIED (code=42501: permission denied for table audit_logs)
+DB-08 | PASS | Authenticated user truncates audit_logs (+ superuser BEFORE TRUNCATE trigger check) | actual=DENIED (code=42501: permission denied for table audit_logs)
+DB-09 | PASS | AAL1 privileged user with verified TOTP attempts protected cross-user access | actual=ALLOWED (rows=0)
+DB-10 | PASS | AAL2 privileged user accesses permitted administrative data | actual=ALLOWED (rows=2)
+DB-11 | PASS | Participant attempts privileged RPC (get_admin_dashboard_analytics) | actual=DENIED (code=42501: permission denied for function get_admin_dashboard_analytics)
+DB-12 | PASS | Deactivated admin attempts privileged reads & own profile update | actual=ALLOWED (rows=0)
+DB-13 | PASS | Client manipulates session GUC (request.jwt.claim.role / claims) to bypass profile trigger | actual=DENIED (code=42501: permission denied for table profiles)
+DB-14 | PASS | Unauthorized user executes verify_payment_tx & private helpers directly | actual=DENIED (code=42501: permission denied for function verify_payment_tx)
+DB-15 | PASS | Admin attempts Super Admin-only staff role promotion via SQL/PostgREST | actual=DENIED (code=42501: permission denied for table profiles)
+DB-16 | PASS | Service role executes trusted RPCs & audit log reads/inserts | actual=ALLOWED (rows=1)

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import Title_Jumbotron from "../components/Title_Jumbotron";
+import TitleJumbotron from "../components/Title_Jumbotron";
 import { events_page_subtitle } from '../content/subtitle_texts';
 import EventCard from "../components/event_card";
 import { competitionsList, getLensSlides, getCinematicItems } from "../content/events";
@@ -21,22 +21,29 @@ const CATEGORIES = [
 function Events() {
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
     const [viewMode, setViewMode] = useState("cinematic"); // 'cinematic' | 'carousel'
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedCompId, setSelectedCompId] = useState(null);
 
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedQuery(searchQuery), 160);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const filteredCompetitions = useMemo(() => {
+        const q = debouncedQuery.trim().toLowerCase();
         return competitionsList.filter((comp) => {
             const matchesCategory =
                 selectedCategory === "all" || comp.category_id === selectedCategory;
             const matchesSearch =
-                searchQuery.trim() === "" ||
-                comp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                comp.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                comp.category.toLowerCase().includes(searchQuery.toLowerCase());
+                q === "" ||
+                comp.title.toLowerCase().includes(q) ||
+                comp.desc.toLowerCase().includes(q) ||
+                comp.category.toLowerCase().includes(q);
             return matchesCategory && matchesSearch;
         });
-    }, [selectedCategory, searchQuery]);
+    }, [selectedCategory, debouncedQuery]);
 
     const cinematicItems = useMemo(() => {
         return getCinematicItems(filteredCompetitions);
@@ -50,7 +57,7 @@ function Events() {
     useEffect(() => {
         setCurrentIndex(0);
         setSelectedCompId(null);
-    }, [selectedCategory, searchQuery]);
+    }, [selectedCategory, debouncedQuery]);
 
     // Keep currentIndex valid for carousel
     useEffect(() => {
@@ -66,7 +73,7 @@ function Events() {
 
     return (
         <div className="Events">
-            <Title_Jumbotron
+            <TitleJumbotron
                 bigHeader={"Discover"}
                 bigHeaderCaps={"TECHNORITI '26"}
                 subtitle={events_page_subtitle}
@@ -107,7 +114,7 @@ function Events() {
                 </div>
 
                 {/* Category Pills */}
-                <div className="filter-pills-container">
+                <div className="filter-pills-container" role="group" aria-label="Competition categories">
                     {CATEGORIES.map((cat) => {
                         const count =
                             cat.id === "all"
@@ -116,6 +123,8 @@ function Events() {
                         return (
                             <button
                                 key={cat.id}
+                                type="button"
+                                aria-pressed={selectedCategory === cat.id}
                                 className={`filter-pill ${selectedCategory === cat.id ? "active" : ""}`}
                                 onClick={() => setSelectedCategory(cat.id)}
                             >
@@ -125,10 +134,10 @@ function Events() {
                     })}
                 </div>
 
-                <div className="events-count-badge">
+                <div className="events-count-badge" aria-live="polite">
                     Showing {filteredCompetitions.length} of {competitionsList.length} Technical Competitions
                     {viewMode === "cinematic" && (
-                        <span className="cinematic-view-hint" style={{ color: "#BE00D7", fontWeight: 600 }}> • Expandable Rows • Hover / Tap to preview</span>
+                        <span className="cinematic-view-hint" style={{ color: "#e879f9", fontWeight: 600 }}> • Expandable Rows • Hover / Tap to preview</span>
                     )}
                     {viewMode === "carousel" && filteredCompetitions.length > 0 && (
                         <span className="carousel-view-hint"> • Curved Lens WebGL • Drag / Flick / Scroll wheel</span>

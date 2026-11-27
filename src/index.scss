@@ -1,8 +1,30 @@
 body {
     background: #0b0b0b;
     color: white;
+    overflow-x: clip;
 }
 
-*{
-    overflow-x : hidden;
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    z-index: 2000;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #000000;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-decoration: none;
+
+    &:focus,
+    &:focus-visible {
+        left: 12px;
+        outline: 3px solid #e879f9;
+        outline-offset: 2px;
+    }
+}
+
+#main-content:focus {
+    outline: none;
 }

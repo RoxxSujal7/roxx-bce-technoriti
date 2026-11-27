@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useId, useEffect } from "react";
+import { useState, useId, useEffect, useRef } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -9,7 +9,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import ButtonWithIcon from "./ButtonWithIcon";
-import { useAuth } from "../../context/AuthContext";
+import { PASSWORD_RECOVERY_ORIGIN_KEY, useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 
 function cn(...inputs: ClassValue[]) {
@@ -42,9 +42,19 @@ export function Typewriter({
 
   const textArray = Array.isArray(text) ? text : [text];
   const currentText = textArray[textArrayIndex] || "";
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    if (!currentText) return;
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setPrefersReducedMotion(mq.matches);
+    sync();
+    mq.addEventListener?.("change", sync);
+    return () => mq.removeEventListener?.("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!currentText || prefersReducedMotion) return;
 
     let delayTimeout: ReturnType<typeof setTimeout> | undefined;
     const timeout = setTimeout(
@@ -84,7 +94,12 @@ export function Typewriter({
     displayText,
     text,
     textArray.length,
+    prefersReducedMotion,
   ]);
+
+  if (prefersReducedMotion) {
+    return <span className={className}>{currentText}</span>;
+  }
 
   return (
     <span className={className}>
@@ -121,7 +136,7 @@ const buttonVariants = cva(
         outline: "border border-white/20 bg-[#121215] text-white hover:bg-[#BE00D7]/15 hover:border-[#BE00D7] hover:text-white shadow-sm font-medium",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "bg-transparent text-white/80 hover:bg-white/10 hover:text-white",
-        link: "bg-transparent border-0 text-[#BE00D7] hover:text-[#e070ff] underline-offset-4 hover:underline p-0 h-auto font-medium shadow-none focus-visible:ring-0",
+        link: "bg-transparent border-0 text-[#e879f9] hover:text-[#f5d0fe] underline-offset-4 hover:underline p-0 h-auto font-medium shadow-none focus-visible:ring-2 focus-visible:ring-[#e879f9]",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -153,7 +168,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-11 w-full rounded-lg border border-white/20 bg-[#0d0d10] px-3.5 py-2.5 text-sm text-white shadow-sm transition-colors placeholder:text-white/40 focus-visible:border-[#BE00D7] focus-visible:ring-1 focus-visible:ring-[#BE00D7] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-11 w-full rounded-lg border border-white/25 bg-[#0d0d10] px-3.5 py-2.5 text-sm text-white shadow-sm transition-colors placeholder:text-white/55 focus-visible:border-[#e879f9] focus-visible:ring-2 focus-visible:ring-[#e879f9] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         ref={ref}
@@ -180,7 +195,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute inset-y-0 end-0 flex h-full w-10 items-center justify-center bg-transparent border-0 text-white/60 transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-none"
+            className="absolute inset-y-0 end-0 flex h-full w-10 items-center justify-center bg-transparent border-0 text-white/70 transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e879f9] rounded-md disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-none"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (<EyeOff className="size-4" aria-hidden="true" />) : (<Eye className="size-4" aria-hidden="true" />)}
@@ -192,70 +207,150 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 );
 PasswordInput.displayName = "PasswordInput";
 
-function getRedirectUrl() {
+export function validateStrongPassword(pw: string): string | null {
+  if (pw.length < 12) {
+    return "Password must be at least 12 characters long.";
+  }
+  const hasLower = /[a-z]/.test(pw);
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasDigit = /\d/.test(pw);
+  const hasSymbol = /[^A-Za-z0-9]/.test(pw);
+  const classes = [hasLower, hasUpper, hasDigit, hasSymbol].filter(Boolean).length;
+  if (classes < 3) {
+    return "Password must include at least 3 of: uppercase, lowercase, number, and symbol.";
+  }
+  return null;
+}
+
+export function getSafeAuthErrorMessage(err: { message?: string; status?: number } | null | undefined, fallback: string): string {
+  const raw = String(err?.message || "").toLowerCase();
+  if (raw.includes("rate limit") || err?.status === 429) {
+    return "Too many authentication attempts. Please wait a minute and try again.";
+  }
+  if (raw.includes("invalid login credentials")) {
+    return "Invalid email or password. Please verify your credentials and try again.";
+  }
+  if (raw.includes("email not confirmed")) {
+    return "Please verify your email address from your inbox before signing in.";
+  }
+  if (raw.includes("weak password") || raw.includes("password should be")) {
+    return "Please choose a stronger password (minimum 12 characters with mixed characters).";
+  }
+  if (raw.includes("user already registered") || raw.includes("already been registered")) {
+    return "Unable to complete sign up with those credentials. If you already registered, try signing in or resetting your password.";
+  }
+  return fallback;
+}
+
+export function getRedirectUrl() {
   if (typeof window === "undefined") return undefined;
   return `${window.location.origin}/`;
 }
 
-function SignInForm({
+export function GoogleMarkIcon({ className = "mr-2 h-4 w-4 shrink-0" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
+      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z" />
+      <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z" />
+      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
+    </svg>
+  );
+}
+
+export function SignInForm({
   onForgotPassword,
   onSuccess,
+  heading = "Sign in to your account",
+  subtitle = "Enter your email below to sign in",
+  emailLabel = "Email",
+  emailPlaceholder = "m@example.com",
+  forgotLabel = "Forgot password?",
+  hideHeader = false,
 }: {
   onForgotPassword: () => void;
   onSuccess?: () => void;
+  heading?: string;
+  subtitle?: string;
+  emailLabel?: string;
+  emailPlaceholder?: string;
+  forgotLabel?: string;
+  hideHeader?: boolean;
 }) {
-  const { configured } = useAuth();
+  const { configured, authError, clearAuthError } = useAuth();
+  const emailId = useId();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const displayError = errorMsg || authError;
+
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     setErrorMsg(null);
+    clearAuthError?.();
     if (!configured || !supabase) {
       setErrorMsg("Authentication backend is not configured (.env missing Supabase settings).");
+      return;
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      setErrorMsg("Enter both email and password.");
       return;
     }
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password,
       });
+      if (!mountedRef.current) return;
       if (error) {
-        setErrorMsg(error.message || "Invalid login credentials.");
+        setErrorMsg(getSafeAuthErrorMessage(error, "Invalid email or password."));
         return;
       }
       onSuccess?.();
     } catch {
-      setErrorMsg("Unable to sign in right now. Please try again.");
+      if (mountedRef.current) {
+        setErrorMsg("Unable to sign in right now. Please try again.");
+      }
     } finally {
-      setSubmitting(false);
+      if (mountedRef.current) {
+        setSubmitting(false);
+      }
     }
   };
 
   return (
-    <form onSubmit={handleSignIn} autoComplete="on" className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold text-white">Sign in to your account</h1>
-        <p className="text-balance text-sm text-white/60">Enter your email below to sign in</p>
-      </div>
-      {errorMsg && (
+    <form onSubmit={handleSignIn} autoComplete="on" className="flex flex-col gap-5">
+      {!hideHeader && (
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold text-white">{heading}</h1>
+          <p className="text-balance text-sm text-white/75">{subtitle}</p>
+        </div>
+      )}
+      {displayError && (
         <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
-          {errorMsg}
+          {displayError}
         </div>
       )}
       <div className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="email" className="text-white">Email</Label>
+          <Label htmlFor={emailId} className="text-white">{emailLabel}</Label>
           <Input
-            id="email"
+            id={emailId}
             name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="m@example.com"
+            placeholder={emailPlaceholder}
             required
             autoComplete="email"
           />
@@ -273,9 +368,9 @@ function SignInForm({
           <button
             type="button"
             onClick={onForgotPassword}
-            className="bg-transparent border-0 p-0 text-xs text-[#BE00D7] hover:text-[#e070ff] cursor-pointer"
+            className="bg-transparent border-0 p-0 text-xs text-[#e879f9] hover:text-[#f5d0fe] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e879f9] rounded cursor-pointer"
           >
-            Forgot password?
+            {forgotLabel}
           </button>
         </div>
         <div className="mt-1 flex justify-center">
@@ -290,19 +385,33 @@ function SignInForm({
 
 function SignUpForm() {
   const { configured } = useAuth();
+  const fullNameId = useId();
+  const emailId = useId();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     setErrorMsg(null);
     setInfoMsg(null);
-    if (password.length < 8) {
-      setErrorMsg("Password must be at least 8 characters long.");
+    const pwErr = validateStrongPassword(password);
+    if (pwErr) {
+      setErrorMsg(pwErr);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
       return;
     }
     if (!configured || !supabase) {
@@ -319,8 +428,9 @@ function SignUpForm() {
           emailRedirectTo: getRedirectUrl(),
         },
       });
+      if (!mountedRef.current) return;
       if (error) {
-        setErrorMsg(error.message || "Registration failed.");
+        setErrorMsg(getSafeAuthErrorMessage(error, "Registration could not be completed."));
         return;
       }
       if (data?.user && !data.session) {
@@ -329,17 +439,21 @@ function SignUpForm() {
         setInfoMsg("Account created and signed in.");
       }
     } catch {
-      setErrorMsg("Unable to create account right now. Please try again.");
+      if (mountedRef.current) {
+        setErrorMsg("Unable to create account right now. Please try again.");
+      }
     } finally {
-      setSubmitting(false);
+      if (mountedRef.current) {
+        setSubmitting(false);
+      }
     }
   };
 
   return (
-    <form onSubmit={handleSignUp} autoComplete="on" className="flex flex-col gap-6">
+    <form onSubmit={handleSignUp} autoComplete="on" className="flex flex-col gap-5">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold text-white">Create an account</h1>
-        <p className="text-balance text-sm text-white/60">Enter your details below to sign up</p>
+        <p className="text-balance text-sm text-white/75">Enter your details below to sign up</p>
       </div>
       {errorMsg && (
         <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
@@ -351,11 +465,11 @@ function SignUpForm() {
           {infoMsg}
         </div>
       )}
-      <div className="grid gap-4">
+      <div className="grid gap-3.5">
         <div className="grid gap-1">
-          <Label htmlFor="name" className="text-white">Full Name</Label>
+          <Label htmlFor={fullNameId} className="text-white">Full Name</Label>
           <Input
-            id="name"
+            id={fullNameId}
             name="name"
             type="text"
             value={fullName}
@@ -366,9 +480,9 @@ function SignUpForm() {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="email" className="text-white">Email</Label>
+          <Label htmlFor={emailId} className="text-white">Email</Label>
           <Input
-            id="email"
+            id={emailId}
             name="email"
             type="email"
             value={email}
@@ -384,11 +498,24 @@ function SignUpForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={8}
+          minLength={12}
           autoComplete="new-password"
-          placeholder="Password (min 8 chars)"
+          placeholder="Minimum 12 characters"
         />
-        <div className="mt-2 flex justify-center">
+        <PasswordInput
+          name="confirm-password"
+          label="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          minLength={12}
+          autoComplete="new-password"
+          placeholder="Re-enter your password"
+        />
+        <p className="m-0 text-[11px] text-white/75">
+          Use at least 12 characters including 3 of: uppercase, lowercase, number, or symbol.
+        </p>
+        <div className="mt-1 flex justify-center">
           <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
             {submitting ? "Creating Account..." : "Sign Up"}
           </ButtonWithIcon>
@@ -398,7 +525,13 @@ function SignUpForm() {
   );
 }
 
-function RecoveryRequestForm({ onBack }: { onBack: () => void }) {
+export function RecoveryRequestForm({
+  onBack,
+  originPath,
+}: {
+  onBack: () => void;
+  originPath?: string;
+}) {
   const { configured } = useAuth();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -415,13 +548,30 @@ function RecoveryRequestForm({ onBack }: { onBack: () => void }) {
     }
     setSubmitting(true);
     try {
+      if (originPath) {
+        try {
+          sessionStorage.setItem(PASSWORD_RECOVERY_ORIGIN_KEY, originPath);
+        } catch (_) { }
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: getRedirectUrl(),
       });
       if (error) {
-        setErrorMsg(error.message);
-        return;
+        const msg = String(error.message || "").toLowerCase();
+        if (error.status === 429 || msg.includes("rate limit")) {
+          setErrorMsg("Too many reset requests. Please wait a minute and try again.");
+          return;
+        }
+        if (Number(error.status ?? 0) >= 500 || msg.includes("fetch") || msg.includes("network") || msg.includes("timeout")) {
+          setErrorMsg("Recovery service temporarily unavailable. Please try again.");
+          return;
+        }
+        if (error.status === 400 && msg.includes("redirect")) {
+          setErrorMsg("Could not initiate password recovery. Check site configuration or try again.");
+          return;
+        }
       }
+      // Non-enumerating confirmation when request succeeded or email was unrecognized
       setStatusMsg("If an account exists for that email, a recovery link has been sent.");
     } catch {
       setErrorMsg("Could not initiate password recovery.");
@@ -467,9 +617,10 @@ function RecoveryRequestForm({ onBack }: { onBack: () => void }) {
   );
 }
 
-function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
+export function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
   const { clearPasswordRecovery } = useAuth();
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -477,8 +628,13 @@ function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (password.length < 8) {
-      setErrorMsg("New password must be at least 8 characters.");
+    const pwErr = validateStrongPassword(password);
+    if (pwErr) {
+      setErrorMsg(pwErr);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
       return;
     }
     if (!supabase) {
@@ -489,7 +645,7 @@ function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        setErrorMsg(error.message);
+        setErrorMsg(getSafeAuthErrorMessage(error, "Unable to update password."));
         return;
       }
       setStatusMsg("Password updated successfully.");
@@ -506,7 +662,7 @@ function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={handleUpdate} className="flex flex-col gap-5">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold text-white">Set new password</h1>
-        <p className="text-balance text-sm text-white/60">Choose a strong new password</p>
+        <p className="text-balance text-sm text-white/60">Choose a strong new password (12+ characters)</p>
       </div>
       {errorMsg && (
         <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
@@ -524,13 +680,127 @@ function UpdatePasswordForm({ onDone }: { onDone: () => void }) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
-        minLength={8}
+        minLength={12}
         autoComplete="new-password"
-        placeholder="Minimum 8 characters"
+        placeholder="Minimum 12 characters"
+      />
+      <PasswordInput
+        name="confirm-new-password"
+        label="Confirm New Password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+        minLength={12}
+        autoComplete="new-password"
+        placeholder="Re-enter new password"
       />
       <ButtonWithIcon type="submit" disabled={submitting} className="w-full justify-between">
         {submitting ? "Updating..." : "Update Password"}
       </ButtonWithIcon>
+    </form>
+  );
+}
+
+export function MfaChallengeForm({
+  onSuccess,
+}: {
+  onSuccess?: (mfaState?: { currentLevel?: string | null; nextLevel?: string | null }) => void;
+}) {
+  const { mfaFactors, refreshMfaStatus, signOut } = useAuth();
+  const factorSelectId = useId();
+  const codeInputId = useId();
+  const [selectedFactorId, setSelectedFactorId] = useState("");
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (verifying) return;
+    setErrorMsg(null);
+    const cleaned = code.replace(/\s+/g, "");
+    if (!/^\d{6}$/.test(cleaned)) {
+      setErrorMsg("Enter the 6-digit verification code from your authenticator app.");
+      return;
+    }
+    const factor = mfaFactors?.find((f) => f.id === selectedFactorId) ?? mfaFactors?.[0];
+    if (!supabase?.auth?.mfa || !factor?.id) {
+      setErrorMsg("MFA factor unavailable. Please sign in again.");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: factor.id,
+        code: cleaned,
+      });
+      if (error) {
+        setErrorMsg("Invalid or expired authenticator code. Please try again.");
+        return;
+      }
+      const mfaState = await refreshMfaStatus();
+      onSuccess?.(mfaState);
+    } catch {
+      setErrorMsg("Unable to verify authenticator code right now.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const currentFactorId =
+    mfaFactors?.find((f) => f.id === selectedFactorId)?.id ?? mfaFactors?.[0]?.id ?? "";
+
+  return (
+    <form onSubmit={handleVerify} className="flex flex-col gap-5">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <h1 className="text-2xl font-bold text-white">Two-factor verification</h1>
+        <p className="text-balance text-sm text-white/75">
+          Enter the 6-digit TOTP code from your authenticator app to continue
+        </p>
+      </div>
+      {errorMsg && (
+        <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+          {errorMsg}
+        </div>
+      )}
+      {Array.isArray(mfaFactors) && mfaFactors.length > 1 && (
+        <div className="grid gap-2">
+          <Label htmlFor={factorSelectId} className="text-white">Authenticator Device</Label>
+          <select
+            id={factorSelectId}
+            value={currentFactorId}
+            onChange={(e) => setSelectedFactorId(e.target.value)}
+            className="h-11 w-full rounded-lg border border-white/25 bg-[#0d0d10] px-3 text-sm text-white focus-visible:border-[#e879f9] focus-visible:ring-2 focus-visible:ring-[#e879f9] focus-visible:outline-none"
+          >
+            {mfaFactors.map((f: { id: string; friendly_name?: string }, idx: number) => (
+              <option key={f.id} value={f.id}>
+                {f.friendly_name || `Authenticator ${idx + 1}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div className="grid gap-2">
+        <Label htmlFor={codeInputId} className="text-white">Authenticator Code</Label>
+        <Input
+          id={codeInputId}
+          name="mfa-code"
+          inputMode="numeric"
+          pattern="[0-9]{6}"
+          maxLength={6}
+          autoComplete="one-time-code"
+          required
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="123456"
+        />
+      </div>
+      <ButtonWithIcon type="submit" disabled={verifying} className="w-full justify-between">
+        {verifying ? "Verifying..." : "Verify & Continue"}
+      </ButtonWithIcon>
+      <Button type="button" variant="link" onClick={() => signOut()} className="mx-auto">
+        Sign out and use another account
+      </Button>
     </form>
   );
 }
@@ -546,7 +816,7 @@ function AuthFormContainer({
   onBeforeOAuth?: () => void;
   onAuthSuccess?: () => void;
 }) {
-  const { configured, isPasswordRecovery } = useAuth();
+  const { configured, isPasswordRecovery, needsMfaChallenge } = useAuth();
   const [showRecovery, setShowRecovery] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [oauthLoading, setOauthLoading] = useState(false);
@@ -581,9 +851,17 @@ function AuthFormContainer({
     }
   };
 
+  if (needsMfaChallenge) {
+    return (
+      <div className="mx-auto grid w-full max-w-[350px] gap-3">
+        <MfaChallengeForm onSuccess={() => onAuthSuccess?.()} />
+      </div>
+    );
+  }
+
   if (isPasswordRecovery) {
     return (
-      <div className="mx-auto grid w-[350px] gap-3">
+      <div className="mx-auto grid w-full max-w-[350px] gap-3">
         <UpdatePasswordForm onDone={() => onAuthSuccess?.()} />
       </div>
     );
@@ -591,27 +869,27 @@ function AuthFormContainer({
 
   if (showRecovery) {
     return (
-      <div className="mx-auto grid w-[350px] gap-3">
+      <div className="mx-auto grid w-full max-w-[350px] gap-3">
         <RecoveryRequestForm onBack={() => setShowRecovery(false)} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto grid w-[350px] gap-3">
+    <div className="mx-auto grid w-full max-w-[350px] gap-3">
       {isSignIn ? (
         <SignInForm onForgotPassword={() => setShowRecovery(true)} onSuccess={onAuthSuccess} />
       ) : (
         <SignUpForm />
       )}
-      <div className="text-center text-sm text-white/70">
+      <div className="text-center text-sm text-white/75">
         {isSignIn ? "Don't have an account?" : "Already have an account?"}{" "}
-        <Button variant="link" className="pl-1 text-[#BE00D7] hover:text-[#e070ff] font-semibold bg-transparent border-0 inline" onClick={onToggle}>
+        <Button variant="link" className="pl-1 text-[#e879f9] hover:text-[#f5d0fe] font-semibold bg-transparent border-0 inline" onClick={onToggle}>
           {isSignIn ? "Sign up" : "Sign in"}
         </Button>
       </div>
-      <div className="relative text-center text-sm my-1 after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-white/15">
-        <span className="relative z-10 bg-black px-3 text-xs uppercase tracking-wider text-white/50">Or continue with</span>
+      <div className="relative text-center text-sm my-1 after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-white/20">
+        <span className="relative z-10 bg-black px-3 text-xs uppercase tracking-wider text-white/75">Or continue with</span>
       </div>
       {oauthError && (
         <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
@@ -623,11 +901,29 @@ function AuthFormContainer({
         type="button"
         disabled={oauthLoading}
         onClick={handleGoogleSignIn}
-        className="w-full bg-[#111114] border-white/20 hover:border-white/40 hover:bg-white/5 text-white font-medium py-2.5 flex items-center justify-center gap-2 transition-all cursor-pointer"
+        className="w-full bg-[#111114] border-white/25 hover:border-white/45 hover:bg-white/5 text-white font-medium py-2.5 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt="" aria-hidden="true" className="mr-2 h-4 w-4" />
+        <GoogleMarkIcon />
         <span className="text-white">{oauthLoading ? "Redirecting to Google..." : "Continue with Google"}</span>
       </Button>
+      {isSignIn && (
+        <div className="pt-1 text-center text-xs text-white/75">
+          Staff or coordinator?{" "}
+          <a
+            href="#/admin-login"
+            className="font-medium text-[#e879f9] hover:text-[#f5d0fe] underline-offset-4 hover:underline"
+          >
+            Admin Login
+          </a>
+        </div>
+      )}
+      <p className="pt-1 text-center text-[11px] text-white/70 m-0">
+        By continuing, you acknowledge the{" "}
+        <a href="#/policies" className="text-[#e879f9] hover:text-[#f5d0fe] underline underline-offset-2">
+          Event Policies &amp; Privacy Notice
+        </a>
+        .
+      </p>
     </div>
   );
 }
@@ -746,7 +1042,7 @@ export function AuthUI({
                 speed={50}
               />”
             </p>
-            <cite className="block text-sm font-semibold tracking-wider text-[#BE00D7] not-italic">
+            <cite className="block text-sm font-semibold tracking-wider text-[#e879f9] not-italic">
               — {currentContent.quote.author}
             </cite>
           </blockquote>

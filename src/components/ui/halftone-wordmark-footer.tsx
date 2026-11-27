@@ -229,6 +229,7 @@ export default function HalftoneWordmarkFooter({
     let dots = new Float32Array(0)
     let count = 0
     let grainTile = null as HTMLCanvasElement | null
+    let grainPattern = null as CanvasPattern | null
     const ink = hwfHex(opts.current.colors.ink) || [233, 228, 218]
     const warm = hwfHex(opts.current.colors.warm) || [233, 118, 43]
 
@@ -299,6 +300,7 @@ export default function HalftoneWordmarkFooter({
         }
         g.putImageData(id, 0, 0)
       }
+      grainPattern = grainTile ? ctx.createPattern(grainTile, "repeat") : null
       awake = true
     }
 
@@ -362,19 +364,16 @@ export default function HalftoneWordmarkFooter({
         ctx.fill()
       }
 
-      if (grainTile && o.grain > 0) {
+      if (grainPattern && o.grain > 0) {
         ctx.globalAlpha = Math.min(1, o.grain) * 0.09
         ctx.globalCompositeOperation = "overlay"
-        const pattern = ctx.createPattern(grainTile, "repeat")
-        if (pattern) {
-          ctx.fillStyle = pattern
-          ctx.fillRect(0, 0, w, h)
-        }
+        ctx.fillStyle = grainPattern
+        ctx.fillRect(0, 0, w, h)
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = "source-over"
       }
-      // Sleep once everything is home and nothing is pushing.
-      awake = moving || ringAge < 900 || px > -1e4
+      // Sleep once springs settle and ring completes (pointer stays stationary cleanly).
+      awake = moving || ringAge < 900
     }
 
     const loop = (now: number) => {

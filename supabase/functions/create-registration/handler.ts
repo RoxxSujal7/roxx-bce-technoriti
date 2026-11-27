@@ -129,8 +129,8 @@ export function makeCreateRegistrationHandler(deps: RegistrationDeps, allowedOri
       return errorResponse(500, "REGISTRATION_FAILED", "Could not create registration.", corsHeaders);
     }
 
-    const upiVpa = deps.upiConfig?.vpa ?? Deno.env.get("UPI_VPA") ?? "";
-    const upiPayeeName = deps.upiConfig?.payeeName ?? Deno.env.get("UPI_PAYEE_NAME") ?? "Technoriti 2026 BCE";
+    const upiVpa = (deps.upiConfig?.vpa ?? Deno.env.get("UPI_VPA") ?? "").trim();
+    const upiPayeeName = (deps.upiConfig?.payeeName ?? Deno.env.get("UPI_PAYEE_NAME") ?? "Technoriti 2026 BCE").trim() || "Technoriti 2026 BCE";
     const totalInr = Number(data.computed_total_inr ?? 0);
     const passCode = String(data.pass_code ?? "");
 

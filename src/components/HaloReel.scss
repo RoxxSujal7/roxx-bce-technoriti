@@ -1,79 +1,83 @@
-/* Halo Reel CSS utilities for pure Sass/React architecture */
-.relative { position: relative; }
-.absolute { position: absolute; }
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-.inset-y-0 { top: 0; bottom: 0; }
-.z-0 { z-index: 0; }
-
-.touch-pan-y { touch-action: pan-y; }
-.select-none { user-select: none; -webkit-user-select: none; }
-.overflow-hidden { overflow: hidden; }
-.outline-none { outline: none; }
-
-.cursor-grab { cursor: grab; }
-.active\:cursor-grabbing:active,
-.cursor-grabbing { cursor: grabbing; }
-
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.gap-1 { gap: 0.25rem; }
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.p-3 { padding: 0.75rem; }
-.text-center { text-align: center; }
-.pointer-events-none { pointer-events: none; }
-.object-cover { object-fit: cover; }
-
-.shadow-xl {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(190, 0, 215, 0.35);
-  border-radius: 18px;
-  border: 1px solid rgba(190, 0, 215, 0.45);
-  background-color: #121016;
-}
-
-.bg-card {
-  background: linear-gradient(145deg, #1e1329 0%, #0d0914 100%);
-}
-.text-card-foreground {
-  color: #ffffff;
-}
-.text-2xl {
-  font-size: 1.15rem;
-  letter-spacing: 0.5px;
-}
-.font-black {
-  font-weight: 800;
-  font-family: 'Poppins', sans-serif;
-}
-.leading-none {
-  line-height: 1.15;
-}
-.text-\[0\.6rem\] {
-  font-size: 0.65rem;
-  font-family: 'Inter', sans-serif;
-  color: #00ffff;
-}
-.uppercase {
-  text-transform: uppercase;
-}
-.tracking-\[0\.2em\] {
-  letter-spacing: 0.2em;
-}
-.opacity-70 {
-  opacity: 0.85;
-}
-
-.focus-visible\:ring-2:focus-visible {
-  outline: 2px solid #BE00D7;
-  outline-offset: 2px;
-}
-
+/* Halo Reel CSS utilities scoped strictly to HaloReel containers so global tokens never leak */
 .halo-reel-wrapper {
   background: radial-gradient(circle at center, rgba(30, 16, 42, 0.6) 0%, rgba(0, 0, 0, 0.95) 70%);
   border-top: 1px solid rgba(190, 0, 215, 0.2);
   border-bottom: 1px solid rgba(190, 0, 215, 0.2);
   padding: 2rem 0;
+}
+
+.halo-stage-wrapper,
+.halo-reel-wrapper {
+
+  .relative { position: relative; }
+  .absolute { position: absolute; }
+  .w-full { width: 100%; }
+  .h-full { height: 100%; }
+  .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+  .inset-y-0 { top: 0; bottom: 0; }
+  .z-0 { z-index: 0; }
+
+  .touch-pan-y { touch-action: pan-y; }
+  .select-none { user-select: none; -webkit-user-select: none; }
+  .overflow-hidden { overflow: hidden; }
+  .outline-none { outline: none; }
+
+  .cursor-grab { cursor: grab; }
+  .active\:cursor-grabbing:active,
+  .cursor-grabbing { cursor: grabbing; }
+
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-center { justify-content: center; }
+  .gap-1 { gap: 0.25rem; }
+  .px-4 { padding-left: 1rem; padding-right: 1rem; }
+  .p-3 { padding: 0.75rem; }
+  .text-center { text-align: center; }
+  .pointer-events-none { pointer-events: none; }
+  .object-cover { object-fit: cover; }
+
+  .shadow-xl {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(190, 0, 215, 0.35);
+    border-radius: 18px;
+    border: 1px solid rgba(190, 0, 215, 0.45);
+    background-color: #121016;
+  }
+
+  .bg-card {
+    background: linear-gradient(145deg, #1e1329 0%, #0d0914 100%);
+  }
+  .text-card-foreground {
+    color: #ffffff;
+  }
+  .text-2xl {
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+  }
+  .font-black {
+    font-weight: 800;
+    font-family: 'Poppins', sans-serif;
+  }
+  .leading-none {
+    line-height: 1.15;
+  }
+  .text-\[0\.6rem\] {
+    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    color: #00ffff;
+  }
+  .uppercase {
+    text-transform: uppercase;
+  }
+  .tracking-\[0\.2em\] {
+    letter-spacing: 0.2em;
+  }
+  .opacity-70 {
+    opacity: 0.85;
+  }
+
+  .focus-visible\:ring-2:focus-visible {
+    outline: 2px solid #BE00D7;
+    outline-offset: 2px;
+  }
 }

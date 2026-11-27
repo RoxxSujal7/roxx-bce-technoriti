@@ -1,4 +1,5 @@
 import "./event_card.scss";
+import { useNavigate } from "react-router-dom";
 import OneFaqQuestion from "./One_faq_question";
 import eventmap from "../content/events";
 import { Row, Col } from "react-bootstrap";
@@ -55,6 +56,7 @@ const getCategoryIconSvg = (categoryId) => {
 };
 
 function EventCard(props) {
+    const navigate = useNavigate();
     const mp = eventmap[props.eventid] || eventmap["1"];
     if (!mp) return null;
 
@@ -73,14 +75,7 @@ function EventCard(props) {
     }
 
     const handleRegisterClick = () => {
-        alert(
-            `TECHNORITI '26 — ${mp.title}\n\n` +
-            `Registration Fee: ${mp.fee || "₹50 / member"}\n` +
-            `Team Size: ${mp.team_size || "1–4 Members"}\n` +
-            `Venue: ${mp.venue}\n` +
-            `Coordinators: ${mp.coordinator} (${mp.coordinator_phone})\n\n` +
-            `Registrations are OPEN! Contact your event coordinator or visit the registration desk at BCE Campus Reception.`
-        );
+        navigate(`/register?arena=${encodeURIComponent(mp.id)}`);
     };
 
     return (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 import CinematicList from '../components/CinematicList';
 import Pricing from '../components/ui/pricing-02';
 import './Accommodation.scss';
@@ -67,7 +67,7 @@ const ACCOMMODATION_FAQS = [
 const Accommodation = () => {
   return (
     <div className="accommodation-page-wrapper">
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="CAMPUS"
         bigHeaderCaps="STAY"
         subtitle="HOSTEL RESIDENCE & CAMPUS HOSPITALITY • BCE BHAGALPUR"

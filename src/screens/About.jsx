@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 import bimleshImg from '../assets/patrons/dr_bimlesh_kumar.jpg';
 import abhinavImg from '../assets/patrons/dr_abhinav_kumar.jpg';
 import shashankImg from '../assets/patrons/prof_shashank_shekhar.png';
@@ -11,7 +11,7 @@ import './About.scss';
 const About = () => {
   return (
     <div className="about-page-wrapper">
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="ABOUT"
         bigHeaderCaps="TECHNORITI"
         subtitle="EAST INDIA'S PREMIER TECHNICAL FESTIVAL • BCE BHAGALPUR"

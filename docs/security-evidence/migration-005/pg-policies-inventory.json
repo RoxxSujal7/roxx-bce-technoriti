@@ -1,0 +1,112 @@
+[
+  {
+    "tablename": "accommodation_plans",
+    "policyname": "accom_select_anon",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_active = true)",
+    "with_check": null
+  },
+  {
+    "tablename": "accommodation_plans",
+    "policyname": "accom_select_authenticated",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((is_active = true) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  },
+  {
+    "tablename": "competitions",
+    "policyname": "competitions_select_anon",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_active = true)",
+    "with_check": null
+  },
+  {
+    "tablename": "competitions",
+    "policyname": "competitions_select_authenticated",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((is_active = true) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  },
+  {
+    "tablename": "coordinator_assignments",
+    "policyname": "coord_assignments_select_scoped",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((coordinator_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  },
+  {
+    "tablename": "payments",
+    "policyname": "payments_select_scoped",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_select_own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_update_own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((id = ( SELECT auth.uid() AS uid)) AND (is_active = true))",
+    "with_check": "((id = ( SELECT auth.uid() AS uid)) AND (is_active = true))"
+  },
+  {
+    "tablename": "registration_arenas",
+    "policyname": "reg_arenas_select_scoped",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(( SELECT private.is_admin_or_super() AS is_admin_or_super) OR (EXISTS ( SELECT 1\n   FROM registrations r\n  WHERE ((r.id = registration_arenas.registration_id) AND (r.user_id = ( SELECT auth.uid() AS uid))))))",
+    "with_check": null
+  },
+  {
+    "tablename": "registrations",
+    "policyname": "registrations_select_scoped",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_admin_or_super() AS is_admin_or_super))",
+    "with_check": null
+  }
+]

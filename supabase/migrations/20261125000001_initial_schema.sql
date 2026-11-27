@@ -4,7 +4,8 @@
 -- Security: Least-privilege schema, database-enforced invariants & audit trail
 -- ============================================================================
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- Private schema for internal RLS helpers (excluded from PostgREST API)
 CREATE SCHEMA IF NOT EXISTS private;

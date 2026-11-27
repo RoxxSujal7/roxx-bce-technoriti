@@ -1,4 +1,4 @@
-import { authenticateRequest, requireRole, type AuthLookup, type UserRole } from "../_shared/auth.ts";
+import { authenticateRequest, requirePrivilegedMfa, requireRole, type AuthLookup, type UserRole } from "../_shared/auth.ts";
 import { createEdgeHandler } from "../_shared/edge.ts";
 import { errorResponse, jsonResponse, logSecurityEvent, parseJsonBody } from "../_shared/http.ts";
 import { enforceRateLimit, type RateLimiter } from "../_shared/rateLimit.ts";
@@ -18,10 +18,30 @@ export interface ManageAdminsDeps {
     role: UserRole;
     is_active: boolean;
   } | null>;
-  updateProfileRoleStatus(targetId: string, updates: { role?: UserRole; is_active?: boolean }): Promise<string | null>;
-  assignCoordinator(coordinatorId: string, competitionId: string, actorId: string): Promise<{ data: Record<string, unknown> | null; error: string | null }>;
-  removeCoordinatorAssignment(assignmentId: string): Promise<string | null>;
+  updateProfileRoleStatus(
+    targetId: string,
+    updates: { role?: UserRole; is_active?: boolean },
+    actorId?: string,
+  ): Promise<string | { error: string | null; audited?: boolean } | null>;
+  assignCoordinator(
+    coordinatorId: string,
+    competitionId: string,
+    actorId: string,
+  ): Promise<{ data: Record<string, unknown> | null; error: string | null; audited?: boolean }>;
+  removeCoordinatorAssignment(
+    assignmentId: string,
+    actorId?: string,
+  ): Promise<string | { error: string | null; audited?: boolean } | null>;
   writeAuditLog(entry: { actor_id: string; actor_role: string; action: string; target_table: string; target_id: string; details: Record<string, unknown> }): Promise<void>;
+}
+
+function unwrapMutateResult(res: string | { error: string | null; audited?: boolean } | null): {
+  error: string | null;
+  audited: boolean;
+} {
+  if (res === null) return { error: null, audited: false };
+  if (typeof res === "string") return { error: res, audited: false };
+  return { error: res.error, audited: Boolean(res.audited) };
 }
 
 const ASSIGNABLE_ROLES = new Set<UserRole>(["admin", "coordinator", "participant"]);
@@ -34,6 +54,8 @@ export function makeManageAdminsHandler(deps: ManageAdminsDeps, allowedOrigins?:
 
     const forbidden = requireRole(actor, ["super_admin"], corsHeaders);
     if (forbidden) return forbidden;
+    const mfaDenied = requirePrivilegedMfa(actor, corsHeaders);
+    if (mfaDenied) return mfaDenied;
 
     const rateLimited = await enforceRateLimit(
       deps.rateLimiter,
@@ -82,34 +104,42 @@ export function makeManageAdminsHandler(deps: ManageAdminsDeps, allowedOrigins?:
         if (!ASSIGNABLE_ROLES.has(nextRole)) {
           return errorResponse(400, "VALIDATION_ERROR", "Role must be admin, coordinator, or participant.", corsHeaders);
         }
-        const err = await deps.updateProfileRoleStatus(target.id, { role: nextRole });
+        const { error: err, audited } = unwrapMutateResult(
+          await deps.updateProfileRoleStatus(target.id, { role: nextRole }, actor.id),
+        );
         if (err) return errorResponse(500, "UPDATE_FAILED", "Failed to update role.", corsHeaders);
 
-        await deps.writeAuditLog({
-          actor_id: actor.id,
-          actor_role: actor.role,
-          action: "ROLE_UPDATED",
-          target_table: "profiles",
-          target_id: target.id,
-          details: { previous_role: target.role, new_role: nextRole },
-        });
+        if (!audited) {
+          await deps.writeAuditLog({
+            actor_id: actor.id,
+            actor_role: actor.role,
+            action: "ROLE_UPDATED",
+            target_table: "profiles",
+            target_id: target.id,
+            details: { previous_role: target.role, new_role: nextRole },
+          });
+        }
         logSecurityEvent("admin_role_updated", { actorId: actor.id, targetId: target.id, nextRole });
         return jsonResponse({ updated: true, target_user_id: target.id, role: nextRole }, 200, corsHeaders);
       } else {
         if (typeof body.is_active !== "boolean") {
           return errorResponse(400, "VALIDATION_ERROR", "is_active boolean is required.", corsHeaders);
         }
-        const err = await deps.updateProfileRoleStatus(target.id, { is_active: body.is_active });
+        const { error: err, audited } = unwrapMutateResult(
+          await deps.updateProfileRoleStatus(target.id, { is_active: body.is_active }, actor.id),
+        );
         if (err) return errorResponse(500, "UPDATE_FAILED", "Failed to update account status.", corsHeaders);
 
-        await deps.writeAuditLog({
-          actor_id: actor.id,
-          actor_role: actor.role,
-          action: body.is_active ? "STAFF_REACTIVATED" : "STAFF_DEACTIVATED",
-          target_table: "profiles",
-          target_id: target.id,
-          details: { role: target.role, is_active: body.is_active },
-        });
+        if (!audited) {
+          await deps.writeAuditLog({
+            actor_id: actor.id,
+            actor_role: actor.role,
+            action: body.is_active ? "STAFF_REACTIVATED" : "STAFF_DEACTIVATED",
+            target_table: "profiles",
+            target_id: target.id,
+            details: { role: target.role, is_active: body.is_active },
+          });
+        }
         return jsonResponse({ updated: true, target_user_id: target.id, is_active: body.is_active }, 200, corsHeaders);
       }
     }
@@ -131,14 +161,16 @@ export function makeManageAdminsHandler(deps: ManageAdminsDeps, allowedOrigins?:
         return errorResponse(400, "ASSIGN_FAILED", "Could not assign coordinator to competition.", corsHeaders);
       }
 
-      await deps.writeAuditLog({
-        actor_id: actor.id,
-        actor_role: actor.role,
-        action: "COORDINATOR_ASSIGNED",
-        target_table: "coordinator_assignments",
-        target_id: String(assigned.data?.id ?? `${coordId}:${compId}`),
-        details: { coordinator_id: coordId, competition_id: compId },
-      });
+      if (!assigned.audited) {
+        await deps.writeAuditLog({
+          actor_id: actor.id,
+          actor_role: actor.role,
+          action: "COORDINATOR_ASSIGNED",
+          target_table: "coordinator_assignments",
+          target_id: String(assigned.data?.id ?? `${coordId}:${compId}`),
+          details: { coordinator_id: coordId, competition_id: compId },
+        });
+      }
       return jsonResponse({ assignment: assigned.data }, 201, corsHeaders);
     }
 
@@ -148,17 +180,21 @@ export function makeManageAdminsHandler(deps: ManageAdminsDeps, allowedOrigins?:
         return errorResponse(400, "VALIDATION_ERROR", "Valid assignment_id UUID is required.", corsHeaders);
       }
 
-      const err = await deps.removeCoordinatorAssignment(assignmentId);
+      const { error: err, audited } = unwrapMutateResult(
+        await deps.removeCoordinatorAssignment(assignmentId, actor.id),
+      );
       if (err) return errorResponse(400, "REMOVE_FAILED", "Could not remove coordinator assignment.", corsHeaders);
 
-      await deps.writeAuditLog({
-        actor_id: actor.id,
-        actor_role: actor.role,
-        action: "COORDINATOR_UNASSIGNED",
-        target_table: "coordinator_assignments",
-        target_id: assignmentId,
-        details: {},
-      });
+      if (!audited) {
+        await deps.writeAuditLog({
+          actor_id: actor.id,
+          actor_role: actor.role,
+          action: "COORDINATOR_UNASSIGNED",
+          target_table: "coordinator_assignments",
+          target_id: assignmentId,
+          details: {},
+        });
+      }
       return jsonResponse({ removed: true, assignment_id: assignmentId }, 200, corsHeaders);
     }
 

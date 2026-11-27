@@ -1,4 +1,4 @@
-import { authenticateRequest, requireRole, type AuthLookup } from "../_shared/auth.ts";
+import { authenticateRequest, requirePrivilegedMfa, requireRole, type AuthLookup } from "../_shared/auth.ts";
 import { createEdgeHandler } from "../_shared/edge.ts";
 import { errorResponse, jsonResponse, parseJsonBody } from "../_shared/http.ts";
 import { enforceRateLimit, type RateLimiter } from "../_shared/rateLimit.ts";
@@ -8,8 +8,16 @@ export interface ManageCompetitionsDeps {
   authLookup: AuthLookup;
   rateLimiter: RateLimiter;
   listCatalog(): Promise<{ competitions: Record<string, unknown>[]; accommodationPlans: Record<string, unknown>[]; error: string | null }>;
-  updateCompetition(id: string, updates: Record<string, unknown>): Promise<{ data: Record<string, unknown> | null; error: string | null }>;
-  updateAccommodationPlan(id: string, updates: Record<string, unknown>): Promise<{ data: Record<string, unknown> | null; error: string | null }>;
+  updateCompetition(
+    id: string,
+    updates: Record<string, unknown>,
+    actorId?: string,
+  ): Promise<{ data: Record<string, unknown> | null; error: string | null; audited?: boolean }>;
+  updateAccommodationPlan(
+    id: string,
+    updates: Record<string, unknown>,
+    actorId?: string,
+  ): Promise<{ data: Record<string, unknown> | null; error: string | null; audited?: boolean }>;
   writeAuditLog(entry: { actor_id: string; actor_role: string; action: string; target_table: string; target_id: string; details: Record<string, unknown> }): Promise<void>;
 }
 
@@ -23,6 +31,8 @@ export function makeManageCompetitionsHandler(deps: ManageCompetitionsDeps, allo
 
     const forbidden = requireRole(actor, ["admin", "super_admin"], corsHeaders);
     if (forbidden) return forbidden;
+    const mfaDenied = requirePrivilegedMfa(actor, corsHeaders);
+    if (mfaDenied) return mfaDenied;
 
     const rateLimited = await enforceRateLimit(
       deps.rateLimiter,
@@ -63,16 +73,18 @@ export function makeManageCompetitionsHandler(deps: ManageCompetitionsDeps, allo
         return errorResponse(400, "VALIDATION_ERROR", "No valid fields provided.", corsHeaders);
       }
 
-      const res = await deps.updateAccommodationPlan(id, updates);
+      const res = await deps.updateAccommodationPlan(id, updates, actor.id);
       if (res.error) return errorResponse(400, "UPDATE_FAILED", "Could not update accommodation plan.", corsHeaders);
-      await deps.writeAuditLog({
-        actor_id: actor.id,
-        actor_role: actor.role,
-        action: "TARIFF_UPDATED",
-        target_table: "accommodation_plans",
-        target_id: id,
-        details: updates,
-      });
+      if (!res.audited) {
+        await deps.writeAuditLog({
+          actor_id: actor.id,
+          actor_role: actor.role,
+          action: "TARIFF_UPDATED",
+          target_table: "accommodation_plans",
+          target_id: id,
+          details: updates,
+        });
+      }
       return jsonResponse({ accommodation_plan: res.data }, 200, corsHeaders);
     }
 
@@ -122,17 +134,19 @@ export function makeManageCompetitionsHandler(deps: ManageCompetitionsDeps, allo
       return errorResponse(400, "VALIDATION_ERROR", "No valid competition fields provided.", corsHeaders);
     }
 
-    const res = await deps.updateCompetition(compId, updates);
+    const res = await deps.updateCompetition(compId, updates, actor.id);
     if (res.error) return errorResponse(400, "UPDATE_FAILED", "Could not update competition record.", corsHeaders);
 
-    await deps.writeAuditLog({
-      actor_id: actor.id,
-      actor_role: actor.role,
-      action: "COMPETITION_UPDATED",
-      target_table: "competitions",
-      target_id: compId,
-      details: updates,
-    });
+    if (!res.audited) {
+      await deps.writeAuditLog({
+        actor_id: actor.id,
+        actor_role: actor.role,
+        action: "COMPETITION_UPDATED",
+        target_table: "competitions",
+        target_id: compId,
+        details: updates,
+      });
+    }
     return jsonResponse({ competition: res.data }, 200, corsHeaders);
   }, allowedOrigins);
 }

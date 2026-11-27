@@ -48,8 +48,14 @@
                 background: rgba(190, 0, 215, 0.15);
             }
 
+            &:focus-visible {
+                outline: 2px solid #e879f9;
+                outline-offset: 2px;
+                color: #ffffff;
+            }
+
             &.active {
-                background: #BE00D7;
+                background: #9e00b2;
                 color: #ffffff;
                 box-shadow: 0 0 16px rgba(190, 0, 215, 0.6);
             }
@@ -87,10 +93,16 @@
             background: rgba(190, 0, 215, 0.15);
         }
 
-        &.active {
-            background: #BE00D7;
+        &:focus-visible {
+            outline: 2px solid #e879f9;
+            outline-offset: 2px;
             color: #ffffff;
-            border-color: #BE00D7;
+        }
+
+        &.active {
+            background: #9e00b2;
+            color: #ffffff;
+            border-color: #e879f9;
             font-weight: 700;
             box-shadow: 0 0 15px rgba(190, 0, 215, 0.5);
         }
@@ -118,7 +130,7 @@
             }
 
             &::placeholder {
-                color: #777777;
+                color: rgba(255, 255, 255, 0.58);
             }
         }
     }
@@ -127,7 +139,7 @@
         text-align: center;
         margin-top: 15px;
         font-size: 0.85rem;
-        color: #888888;
+        color: rgba(255, 255, 255, 0.72);
         letter-spacing: 1px;
         text-transform: uppercase;
 

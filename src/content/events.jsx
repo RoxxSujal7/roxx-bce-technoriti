@@ -897,13 +897,13 @@ export const competitionImages = {
     surveyking: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
     autocad: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
     solidworks: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80",
-    presentation: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80",
+    projectpresentation: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80",
     zerocarbon: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&q=80",
     cinematography: "https://images.unsplash.com/photo-1579632652768-6cb9dcf85912?auto=format&fit=crop&w=800&q=80",
     photography: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80",
     electromania: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
     nukkad: "https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?auto=format&fit=crop&w=800&q=80",
-    quiz: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=800&q=80",
+    generalquiz: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=800&q=80",
     scitechquiz: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=800&q=80"
 };
 
@@ -930,15 +930,18 @@ export const getLensSlides = (list = competitionsList) => {
 
 /** Formats competition list for HaloReel */
 export const getHaloReelItems = (list = competitionsList) => {
-    return list.map((c) => ({
-        src: c.cover_img || competitionImages[c.id],
-        title: c.title,
-        subtitle: c.category,
-        alt: c.title,
-        bgColor: "#170f22",
-        textColor: "#ffffff",
-        id: c.id
-    }));
+    return list.map((c) => {
+        const baseImg = c.cover_img || competitionImages[c.id];
+        return {
+            src: typeof baseImg === "string" ? baseImg.replace("w=800", "w=400") : baseImg,
+            title: c.title,
+            subtitle: c.category,
+            alt: c.title,
+            bgColor: "#170f22",
+            textColor: "#ffffff",
+            id: c.id
+        };
+    });
 };
 
 /** Formats competition list for CinematicList */

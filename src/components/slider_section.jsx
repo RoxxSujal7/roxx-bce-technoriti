@@ -36,37 +36,58 @@ function useInfiniteScroll(direction = 1) {
     let rafId;
     let lastTime = performance.now();
     let hasInitializedRight = false;
+    let cachedHalfWidth = el.scrollWidth / 2;
+    let cachedViewportWidth = window.innerWidth;
+    let isVisible = true;
+    const motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    let prefersReducedMotion = Boolean(motionQuery?.matches);
+
+    const updateMetrics = () => {
+      cachedHalfWidth = el.scrollWidth / 2;
+      cachedViewportWidth = window.innerWidth;
+    };
+
+    const onMotionChange = (e) => {
+      prefersReducedMotion = e.matches;
+    };
+    motionQuery?.addEventListener?.('change', onMotionChange);
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateMetrics) : null;
+    ro?.observe(el);
+    window.addEventListener('resize', updateMetrics, { passive: true });
+
+    const io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver((entries) => {
+          isVisible = entries[0] ? entries[0].isIntersecting : true;
+          if (isVisible) lastTime = performance.now();
+        })
+      : null;
+    io?.observe(el);
 
     const animate = (now) => {
       const dt = (now - lastTime) / 1000;
       lastTime = now;
 
       // Handle initialization for rightward moving track
-      if (direction === -1 && !hasInitializedRight && el.scrollWidth > el.clientWidth) {
-        el.scrollLeft = el.scrollWidth / 2;
+      if (direction === -1 && !hasInitializedRight && cachedHalfWidth > 0) {
+        el.scrollLeft = cachedHalfWidth;
         hasInitializedRight = true;
       }
 
-      const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      if (!isPausedRef.current && !prefersReducedMotion && dt > 0 && dt < 0.2) {
-        // Authentic speed scaling from original repository
-        const screenScale = window.innerWidth / 1920;
+      if (isVisible && !isPausedRef.current && !prefersReducedMotion && dt > 0 && dt < 0.2) {
+        const screenScale = cachedViewportWidth / 1920;
         const speed = 400 * screenScale; // px per second
-        const halfWidth = el.scrollWidth / 2;
 
-        if (halfWidth > 0) {
+        if (cachedHalfWidth > 0) {
           if (direction === 1) {
-            // Row 1 & 3: Moving leftwards (scrollLeft increases)
             el.scrollLeft += speed * dt;
-            if (el.scrollLeft >= halfWidth) {
-              el.scrollLeft -= halfWidth;
+            if (el.scrollLeft >= cachedHalfWidth) {
+              el.scrollLeft -= cachedHalfWidth;
             }
           } else {
-            // Row 2: Moving rightwards (scrollLeft decreases)
             el.scrollLeft -= speed * dt;
             if (el.scrollLeft <= 0) {
-              el.scrollLeft += halfWidth;
+              el.scrollLeft += cachedHalfWidth;
             }
           }
         }
@@ -79,6 +100,10 @@ function useInfiniteScroll(direction = 1) {
 
     return () => {
       cancelAnimationFrame(rafId);
+      ro?.disconnect();
+      io?.disconnect();
+      motionQuery?.removeEventListener?.('change', onMotionChange);
+      window.removeEventListener('resize', updateMetrics);
       el.removeEventListener('mouseenter', onEnter);
       el.removeEventListener('mouseleave', onLeave);
       el.removeEventListener('touchstart', onEnter);

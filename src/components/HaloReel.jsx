@@ -62,6 +62,11 @@ export function HaloReel({
   const rotation = useMotionValue(0);
   const draggingRef = React.useRef(false);
   const hoverRef = React.useRef(false);
+  const visibleRef = React.useRef(true);
+  const activeAnimRef = React.useRef(null);
+  const lastActiveIndexRef = React.useRef(-1);
+  const onActiveItemChangeRef = React.useRef(onActiveItemChange);
+  onActiveItemChangeRef.current = onActiveItemChange;
 
   const [size, setSize] = React.useState({ w: 0, h: 0 });
   React.useEffect(() => {
@@ -72,7 +77,18 @@ export function HaloReel({
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
-    return () => observer.disconnect();
+    let io;
+    if (typeof IntersectionObserver !== "undefined") {
+      io = new IntersectionObserver((entries) => {
+        visibleRef.current = entries[0] ? entries[0].isIntersecting : true;
+      });
+      io.observe(node);
+    }
+    return () => {
+      observer.disconnect();
+      io?.disconnect();
+      activeAnimRef.current?.stop();
+    };
   }, []);
 
   const radiusX = size.w * radiusXRatio;
@@ -112,6 +128,24 @@ export function HaloReel({
   const cardW = cardWidth * fit;
   const cardH = cardHeight * fit;
 
+  // Notify parent whenever the front-most card slot changes during autoplay, drag, or keyboard spin.
+  React.useEffect(() => {
+    if (!count || !slots || !step) return;
+
+    const notifyFrontItem = (r) => {
+      const rawSlot = Math.round(-r / step);
+      const slotIdx = ((rawSlot % slots) + slots) % slots;
+      const itemIdx = slotIdx % count;
+      if (itemIdx !== lastActiveIndexRef.current) {
+        lastActiveIndexRef.current = itemIdx;
+        onActiveItemChangeRef.current?.(items[itemIdx], itemIdx);
+      }
+    };
+
+    notifyFrontItem(rotation.get());
+    return rotation.on("change", notifyFrontItem);
+  }, [count, items, rotation, slots, step]);
+
   // Autoplay. Each step schedules the next, so a paused tick costs a re-check
   // and nothing else — no interval keeps firing behind a held pointer.
   React.useEffect(() => {
@@ -122,7 +156,7 @@ export function HaloReel({
 
     const tick = () => {
       timer = window.setTimeout(() => {
-        if (draggingRef.current || (pauseOnHover && hoverRef.current)) {
+        if (!visibleRef.current || draggingRef.current || (pauseOnHover && hoverRef.current)) {
           tick();
           return;
         }
@@ -196,7 +230,8 @@ export function HaloReel({
       rotation.set(snapped);
       return;
     }
-    animate(rotation, snapped, { duration: 0.5, ease: [0.16, 1, 0.3, 1] });
+    activeAnimRef.current?.stop();
+    activeAnimRef.current = animate(rotation, snapped, { duration: 0.5, ease: [0.16, 1, 0.3, 1] });
   };
 
   const spinBy = (direction) => {
@@ -205,7 +240,8 @@ export function HaloReel({
       rotation.set(target);
       return;
     }
-    animate(rotation, target, {
+    activeAnimRef.current?.stop();
+    activeAnimRef.current = animate(rotation, target, {
       duration: stepDuration / 1000,
       ease: [0.4, 0, 0.2, 1],
     });
@@ -334,6 +370,8 @@ function WheelCard({
           src={item.src}
           alt={decorative ? "" : (item.alt ?? "")}
           draggable={false}
+          decoding="async"
+          loading={decorative ? "lazy" : "eager"}
           className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
         />
       ) : (

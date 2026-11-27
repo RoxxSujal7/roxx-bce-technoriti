@@ -1,15 +1,16 @@
 .title_background {
     height: 100vh;
     background-image:
-        linear-gradient(108.86deg, #000000 14.66%, rgba(0, 0, 0, 0.921875) 14.66%, rgba(0, 0, 0, 0.744296) 50.03%, rgba(0, 0, 0, 0) 61.17%),url('../assets/FlowField_dummy.png');
+        linear-gradient(108.86deg, #000000 14.66%, rgba(0, 0, 0, 0.921875) 14.66%, rgba(0, 0, 0, 0.744296) 50.03%, rgba(0, 0, 0, 0) 61.17%), url('../assets/FlowField_dummy.png');
     background-size: cover;
     background-repeat: no-repeat;
-    @media(max-width:767px)
-    {
+
+    @media(max-width:767px) {
         background-image:
-        linear-gradient(359.93deg, #000000 6.9%, rgba(0, 0, 0, 0) 65.51%),
-        url('../assets/FlowField_dummy.png');
+            linear-gradient(359.93deg, #000000 6.9%, rgba(0, 0, 0, 0) 65.51%),
+            url('../assets/FlowField_dummy.png');
     }
+
     overflow-x: hidden;
 }
 
@@ -29,13 +30,16 @@
     color: white;
     text-align: left;
     font-size: 17vmin;
-    font-size: 20px;
+    font-size: clamp(2.4rem, 11.5vw, 17vmin);
     font-weight: 600;
 }
 
 
 .back_dot_text {
     font-weight: 700;
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 
 .dot_color {
@@ -48,8 +52,8 @@
     color: rgba($color: #ffffff, $alpha: 0.7);
     font-size: 3.2vmin;
     padding-top: 2em;
-    @media(max-width: 767px)
-    {
+
+    @media(max-width: 767px) {
         font-size: 4vw;
     }
 }
@@ -65,8 +69,8 @@
     height: 6vmin;
     width: 6vmin;
     color: rgba($color: #ffffff, $alpha: 0.8);
-    @media(max-width:767px)
-    {   
+
+    @media(max-width:767px) {
         margin-left: 8vw;
         height: 5vh;
         width: auto;
@@ -88,18 +92,18 @@
 }
 
 
-.navlogo{
+.navlogo {
     height: 6vmin;
 }
-.title_tex{
-    @media(max-width:767px)
-    {
+
+.title_tex {
+    @media(max-width:767px) {
         position: absolute;
-        top:18vh;
+        top: 18vh;
     }
-    @media(max-width:400px)
-    {
+
+    @media(max-width:400px) {
         position: absolute;
-        top:36vw;
+        top: 36vw;
     }
 }

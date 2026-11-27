@@ -3,13 +3,19 @@ export const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:3000",
 ];
 
-export function getAllowedOrigins(envVal?: string): string[] {
+export function getAllowedOrigins(envVal?: string, supabaseUrlOverride?: string): string[] {
   const raw = envVal ?? Deno.env.get("ALLOWED_ORIGINS") ?? "";
   const configured = raw
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  return configured.length > 0 ? configured : DEFAULT_ALLOWED_ORIGINS;
+  if (configured.length > 0) return configured;
+  const supaUrl = (supabaseUrlOverride ?? Deno.env.get("SUPABASE_URL") ?? "").trim().toLowerCase();
+  const isHostedNonLocal =
+    Boolean(supaUrl) &&
+    !supaUrl.includes("localhost") &&
+    !supaUrl.includes("127.0.0.1");
+  return isHostedNonLocal ? [] : DEFAULT_ALLOWED_ORIGINS;
 }
 
 export function buildCorsHeaders(

@@ -150,7 +150,30 @@ export function App1({
   const uniqueId = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const gradientId = `app1Verified-${uniqueId}`;
 
-  const [lightTheme, setLightTheme] = React.useState(false);
+  const [lightTheme, setLightTheme] = React.useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("technoriti_admin_theme") === "light";
+    } catch {
+      return false;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem("technoriti_admin_theme", lightTheme ? "light" : "dark");
+    } catch {
+      // Ignore storage quota / privacy mode failures
+    }
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("admin-theme-light", lightTheme);
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("admin-theme-light");
+      }
+    };
+  }, [lightTheme]);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [draftSearch, setDraftSearch] = React.useState(searchQuery);
@@ -331,17 +354,17 @@ export function App1({
                         {item.tone === "verified" ? (
                           <IndianRupee
                             aria-hidden="true"
-                            className="h-4 w-4 text-emerald-400"
+                            className={cn("h-4 w-4", lightTheme ? "text-emerald-600" : "text-emerald-400")}
                           />
                         ) : item.tone === "pending" ? (
                           <CreditCard
                             aria-hidden="true"
-                            className="h-4 w-4 text-amber-400"
+                            className={cn("h-4 w-4", lightTheme ? "text-amber-600" : "text-amber-400")}
                           />
                         ) : (
                           <XCircle
                             aria-hidden="true"
-                            className="h-4 w-4 text-red-400"
+                            className={cn("h-4 w-4", lightTheme ? "text-red-600" : "text-red-400")}
                           />
                         )}
                       </CardHeader>
@@ -380,7 +403,7 @@ export function App1({
                       role="alert"
                       className="flex h-56 flex-col items-center justify-center rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground"
                     >
-                      <AlertCircle className="mb-2 h-6 w-6 text-red-400" aria-hidden="true" />
+                      <AlertCircle className={cn("mb-2 h-6 w-6", lightTheme ? "text-red-600" : "text-red-400")} aria-hidden="true" />
                       <span>Unable to load weekly trend analytics.</span>
                     </div>
                   ) : !trends.hasRecords || trends.series.length === 0 ? (

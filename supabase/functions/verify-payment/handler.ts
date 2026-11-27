@@ -1,4 +1,4 @@
-import { authenticateRequest, requireRole, type AuthLookup } from "../_shared/auth.ts";
+import { authenticateRequest, requirePrivilegedMfa, requireRole, type AuthLookup } from "../_shared/auth.ts";
 import { createEdgeHandler } from "../_shared/edge.ts";
 import { sendTransactionalEmail, escapeHtml, type EmailOutcome } from "../_shared/email.ts";
 import { errorResponse, jsonResponse, logSecurityEvent, parseJsonBody } from "../_shared/http.ts";
@@ -21,6 +21,8 @@ export function makeVerifyPaymentHandler(deps: VerifyPaymentDeps, allowedOrigins
 
     const forbidden = requireRole(actor, ["admin", "super_admin"], corsHeaders);
     if (forbidden) return forbidden;
+    const mfaDenied = requirePrivilegedMfa(actor, corsHeaders);
+    if (mfaDenied) return mfaDenied;
 
     const rateLimited = await enforceRateLimit(
       deps.rateLimiter,

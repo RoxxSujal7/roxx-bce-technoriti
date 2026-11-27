@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 import ButtonWithIcon from '../components/ui/ButtonWithIcon';
 import './Sponsors.scss';
 
@@ -52,7 +52,7 @@ const sponsorsList = [
 const Sponsors = () => {
   return (
     <div className="sponsors-page-wrapper">
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="SPONSORS"
         bigHeaderCaps="& PARTNERS"
         subtitle="COLLABORATION NETWORK & PATRONS • TECHNORITI '26"

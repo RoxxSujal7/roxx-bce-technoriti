@@ -1,4 +1,4 @@
-import Title_Jumbotron from "../components/Title_Jumbotron";
+import TitleJumbotron from "../components/Title_Jumbotron";
 import { team_page_subtitle } from '../content/subtitle_texts';
 import "./Team.scss";
 import { Container } from "react-bootstrap";
@@ -11,12 +11,12 @@ const Teams = () => {
 
     return (
         <div className="Teams">
-            <Title_Jumbotron bigHeader={"Meet the Team"} bigHeaderCaps={"TECHNORITI '26"} subtitle={team_page_subtitle} />
+            <TitleJumbotron bigHeader={"Meet the Team"} bigHeaderCaps={"TECHNORITI '26"} subtitle={team_page_subtitle} />
 
             {/* Patrons & Faculty Leadership */}
             {patronGroup && (
                 <Container className="wrapper my-5">
-                    <h1 className="wrapper__heading mb-4">{patronGroup.group}<span className="dot_color">.</span></h1>
+                    <h2 className="wrapper__heading mb-4">{patronGroup.group}<span className="dot_color">.</span></h2>
                     <ResponsiveCards cards={patronGroup.list} />
                 </Container>
             )}

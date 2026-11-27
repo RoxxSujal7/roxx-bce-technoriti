@@ -39,12 +39,12 @@ const NavigationBar = () => {
             <Navbar variant="dark" expand="md" className={colorChange ? 'navbar-main navbar_black' : 'navbar-main navbar-transparent'} fixed="top">
                 <Container fluid>
                     <Navbar.Brand href="#/" className="nav-item d-flex align-items-center" id="nav-logo">
-                        <img src={logo} className="navlogo me-2" alt="Synergy Logo" style={{ width: "auto", height: "38px" }} />
+                        <img src={logo} className="navlogo me-2" alt="TECHNORITI '26 Logo" style={{ width: "auto", height: "38px" }} />
                         <div className="d-flex flex-column brand-text-wrap" style={{ lineHeight: "1.1" }}>
                             <span className="brand-title" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "1.15rem", letterSpacing: "1px", color: "#ffffff" }}>
-                                TECHNORITI <span style={{ color: "#BE00D7" }}>'26</span>
+                                TECHNORITI <span style={{ color: "#e879f9" }}>'26</span>
                             </span>
-                            <span className="brand-subtitle" style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.62rem", letterSpacing: "1.5px", color: "rgba(255, 255, 255, 0.7)", marginTop: "2px" }}>
+                            <span className="brand-subtitle" style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.62rem", letterSpacing: "1.5px", color: "rgba(255, 255, 255, 0.78)", marginTop: "2px" }}>
                                 BCE BHAGALPUR
                             </span>
                         </div>
@@ -59,8 +59,9 @@ const NavigationBar = () => {
                             <Nav.Link href="#/" className="nav-item">Home</Nav.Link>
                             <Nav.Link href="#/events" className="nav-item">Events</Nav.Link>
                             <Nav.Link href="#/team" className="nav-item">Team</Nav.Link>
+                            {!session && <Nav.Link href="#/admin-login" className="nav-item">Admin Login</Nav.Link>}
                             {session && <Nav.Link href="#/dashboard" className="nav-item">Dashboard</Nav.Link>}
-                            {isStaff && <Nav.Link href="#/admin" className="nav-item" style={{ color: "#BE00D7" }}>Admin</Nav.Link>}
+                            {isStaff && <Nav.Link href="#/admin" className="nav-item" style={{ color: "#e879f9" }}>Admin</Nav.Link>}
                         </Nav>
                         <div className="d-flex align-items-center">
                             <span className="nav-icons">

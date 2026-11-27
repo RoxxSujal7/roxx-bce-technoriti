@@ -1,4 +1,4 @@
-import { authenticateRequest, requireRole, type AuthLookup } from "../_shared/auth.ts";
+import { authenticateRequest, requirePrivilegedMfa, requireRole, type AuthLookup } from "../_shared/auth.ts";
 import { createEdgeHandler } from "../_shared/edge.ts";
 import { errorResponse, jsonResponse, logSecurityEvent } from "../_shared/http.ts";
 import { enforceRateLimit, type RateLimiter } from "../_shared/rateLimit.ts";
@@ -30,6 +30,8 @@ export function makeGetCoordinatorRegistrationsHandler(deps: GetCoordRegsDeps, a
 
     const forbidden = requireRole(actor, ["coordinator", "admin", "super_admin"], corsHeaders);
     if (forbidden) return forbidden;
+    const mfaDenied = requirePrivilegedMfa(actor, corsHeaders);
+    if (mfaDenied) return mfaDenied;
 
     const rateLimited = await enforceRateLimit(
       deps.rateLimiter,
@@ -51,7 +53,11 @@ export function makeGetCoordinatorRegistrationsHandler(deps: GetCoordRegsDeps, a
     let allAssigned: string[] = [];
     let allowedComps: string[];
     if (actor.role === "coordinator") {
-      allAssigned = await deps.getAssignedCompetitionIds(actor.id);
+      try {
+        allAssigned = await deps.getAssignedCompetitionIds(actor.id);
+      } catch {
+        return errorResponse(500, "FETCH_FAILED", "Could not verify assigned competitions.", corsHeaders);
+      }
       if (requestedComp && !allAssigned.includes(requestedComp)) {
         logSecurityEvent("coordinator_unassigned_comp_denied", {
           userId: actor.id,

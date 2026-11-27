@@ -62,6 +62,7 @@ const Footer = () => {
               <li><Link to="/dashboard">Delegate Dashboard</Link></li>
               <li><Link to="/signin">Participant Sign In</Link></li>
               <li><Link to="/signup">Create Account</Link></li>
+              <li><Link to="/admin-login">Admin Login</Link></li>
               <li><Link to="/faq">Hospitality FAQs</Link></li>
               <li><Link to="/contact">Helpline & Contacts</Link></li>
             </ul>
@@ -125,7 +126,8 @@ const Footer = () => {
         {/* Bottom Horizontal Bar: Separator & Legal Notice */}
         <div className="footer-bottom-divider">
           <p className="footer-copyright-text">
-            © 2026 TECHNORITI, BCE Bhagalpur. All Rights Reserved. • East India's Premier Technical Festival
+            © 2026 TECHNORITI, BCE Bhagalpur. All Rights Reserved. • East India's Premier Technical Festival •{' '}
+            <Link to="/policies" className="footer-nav-link d-inline">Policies &amp; Privacy</Link>
           </p>
           <button type="button" className="footer-top-btn" onClick={scrollToTop}>
             Back to top ↑

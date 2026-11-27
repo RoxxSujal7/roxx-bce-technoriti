@@ -1,0 +1,247 @@
+{
+  "pgVersion": "PostgreSQL 19.0 (PGlite 0.6.0) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a), 32-bit",
+  "migrations": [
+    {
+      "file": "20261125000001_initial_schema.sql",
+      "executed": true,
+      "exitCode": 0,
+      "durationMs": 61,
+      "error": null
+    },
+    {
+      "file": "20261125000002_rls_and_functions.sql",
+      "executed": true,
+      "exitCode": 0,
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "file": "20261125000003_seed_catalog.sql",
+      "executed": true,
+      "exitCode": 0,
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "file": "20261125000004_admin_analytics_rpcs.sql",
+      "executed": true,
+      "exitCode": 0,
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "file": "20261125000005_mfa_rls_and_privilege_hardening.sql",
+      "executed": true,
+      "exitCode": 0,
+      "durationMs": 9,
+      "error": null
+    }
+  ],
+  "migration005IdempotentRerun": true,
+  "seededCompetitionsCount": 29,
+  "accommodationPlans": [
+    {
+      "id": "none",
+      "price_per_person_inr": 0
+    },
+    {
+      "id": "lodging",
+      "price_per_person_inr": 50
+    },
+    {
+      "id": "mess",
+      "price_per_person_inr": 125
+    },
+    {
+      "id": "both",
+      "price_per_person_inr": 175
+    }
+  ],
+  "signupTriggerRoleCheck": true,
+  "recoveryCodeEnumStagedAdminAal1Rows": 2,
+  "functionalChecks": {
+    "p1ComputedTotalInr": 500,
+    "p1VerifyStatus": "VERIFIED",
+    "adminAnalyticsVerifiedRevenueInr": 500,
+    "coordAnalyticsAssignedCount": 1
+  },
+  "attackScenarios": [
+    {
+      "id": "DB-01",
+      "scenario": "Anonymous user reads private registrations",
+      "identity": "anon",
+      "authState": "unauthenticated",
+      "aalState": "none",
+      "op": "SELECT * FROM public.registrations",
+      "expected": "Denied (0 rows or permission error)",
+      "actual": "DENIED (code=42501: permission denied for table registrations)",
+      "passed": true
+    },
+    {
+      "id": "DB-02",
+      "scenario": "Participant reads another participant records",
+      "identity": "p1@test.local (participant)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "SELECT * FROM registrations WHERE user_id = p2",
+      "expected": "Denied (0 rows)",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-03",
+      "scenario": "Participant changes their profile role",
+      "identity": "p1@test.local (participant)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "UPDATE public.profiles SET role = 'super_admin'",
+      "expected": "Denied (42501)",
+      "actual": "DENIED (code=42501: permission denied for table profiles)",
+      "passed": true
+    },
+    {
+      "id": "DB-04",
+      "scenario": "Coordinator reads unassigned arena / global registrations via PostgREST",
+      "identity": "coord@test.local (coordinator)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "SELECT * FROM public.registrations",
+      "expected": "Denied (0 rows; coordinators scoped via Edge Function only)",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-05",
+      "scenario": "Coordinator accesses global payment records",
+      "identity": "coord@test.local (coordinator)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "SELECT * FROM public.payments",
+      "expected": "Denied (0 rows)",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-06",
+      "scenario": "Admin promotes themselves to Super Admin",
+      "identity": "admin-mfa@test.local (admin)",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "UPDATE public.profiles SET role = 'super_admin'",
+      "expected": "Denied (42501)",
+      "actual": "DENIED (code=42501: permission denied for table profiles)",
+      "passed": true
+    },
+    {
+      "id": "DB-07",
+      "scenario": "Admin/Super Admin reads raw audit_logs or reads/mutates audit_logs_id_seq directly",
+      "identity": "super-mfa@test.local (super_admin)",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "SELECT * FROM audit_logs + nextval(audit_logs_id_seq)",
+      "expected": "Denied (42501 on table & sequence)",
+      "actual": "DENIED (code=42501: permission denied for table audit_logs)",
+      "passed": true
+    },
+    {
+      "id": "DB-08",
+      "scenario": "Authenticated user truncates audit_logs (+ superuser BEFORE TRUNCATE trigger check)",
+      "identity": "super-mfa@test.local & table owner",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "TRUNCATE TABLE public.audit_logs",
+      "expected": "Denied (42501 grant revoked + BEFORE TRUNCATE trigger)",
+      "actual": "DENIED (code=42501: permission denied for table audit_logs)",
+      "passed": true
+    },
+    {
+      "id": "DB-09",
+      "scenario": "AAL1 privileged user with verified TOTP attempts protected cross-user access",
+      "identity": "admin-mfa@test.local (admin, enrolled TOTP)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "SELECT registrations / payments / other profiles",
+      "expected": "Denied (0 rows across all admin tables)",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-10",
+      "scenario": "AAL2 privileged user accesses permitted administrative data",
+      "identity": "admin-mfa@test.local (admin, AAL2)",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "SELECT * FROM public.registrations / payments",
+      "expected": "Allowed (>= 2 registrations, >= 1 payment)",
+      "actual": "ALLOWED (rows=2)",
+      "passed": true
+    },
+    {
+      "id": "DB-11",
+      "scenario": "Participant attempts privileged RPC (get_admin_dashboard_analytics)",
+      "identity": "p1@test.local (participant)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "SELECT public.get_admin_dashboard_analytics()",
+      "expected": "Denied (42501)",
+      "actual": "DENIED (code=42501: permission denied for function get_admin_dashboard_analytics)",
+      "passed": true
+    },
+    {
+      "id": "DB-12",
+      "scenario": "Deactivated admin attempts privileged reads & own profile update",
+      "identity": "admin-disabled@test.local (is_active=false)",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "SELECT registrations & UPDATE own profile",
+      "expected": "Denied (0 registrations read; 0 profile rows updated under RLS USING is_active=true)",
+      "actual": "ALLOWED (rows=0)",
+      "passed": true
+    },
+    {
+      "id": "DB-13",
+      "scenario": "Client manipulates session GUC (request.jwt.claim.role / claims) to bypass profile trigger",
+      "identity": "p1@test.local (authenticated + spoofed service_role GUC)",
+      "authState": "authenticated",
+      "aalState": "aal1",
+      "op": "set_config(jwt=service_role) + UPDATE profiles SET role='super_admin'",
+      "expected": "Denied (42501)",
+      "actual": "DENIED (code=42501: permission denied for table profiles)",
+      "passed": true
+    },
+    {
+      "id": "DB-14",
+      "scenario": "Unauthorized user executes verify_payment_tx & private helpers directly",
+      "identity": "p1@test.local & anon",
+      "authState": "authenticated / anon",
+      "aalState": "aal1",
+      "op": "CALL verify_payment_tx / private.current_user_role / anon private.is_admin_or_super",
+      "expected": "Denied (42501 across all)",
+      "actual": "DENIED (code=42501: permission denied for function verify_payment_tx)",
+      "passed": true
+    },
+    {
+      "id": "DB-15",
+      "scenario": "Admin attempts Super Admin-only staff role promotion via SQL/PostgREST",
+      "identity": "admin-mfa@test.local (admin, AAL2)",
+      "authState": "authenticated",
+      "aalState": "aal2",
+      "op": "UPDATE public.profiles SET role = 'super_admin' WHERE id = p1",
+      "expected": "Denied (42501)",
+      "actual": "DENIED (code=42501: permission denied for table profiles)",
+      "passed": true
+    },
+    {
+      "id": "DB-16",
+      "scenario": "Service role executes trusted RPCs & audit log reads/inserts",
+      "identity": "service_role",
+      "authState": "service_role",
+      "aalState": "N/A",
+      "op": "create_registration_tx + verify_payment_tx + SELECT audit_logs + analytics RPC",
+      "expected": "Allowed",
+      "actual": "ALLOWED (rows=1)",
+      "passed": true
+    }
+  ],
+  "allScenariosPassed": true
+}

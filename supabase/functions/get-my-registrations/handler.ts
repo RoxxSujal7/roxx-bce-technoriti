@@ -35,8 +35,8 @@ export function makeGetMyRegistrationsHandler(deps: GetMyRegistrationsDeps, allo
       return errorResponse(500, "FETCH_FAILED", "Could not load your registrations.", corsHeaders);
     }
 
-    const upiVpa = deps.upiConfig?.vpa ?? Deno.env.get("UPI_VPA") ?? "";
-    const upiPayeeName = deps.upiConfig?.payeeName ?? Deno.env.get("UPI_PAYEE_NAME") ?? "Technoriti 2026 BCE";
+    const upiVpa = (deps.upiConfig?.vpa ?? Deno.env.get("UPI_VPA") ?? "").trim();
+    const upiPayeeName = (deps.upiConfig?.payeeName ?? Deno.env.get("UPI_PAYEE_NAME") ?? "Technoriti 2026 BCE").trim() || "Technoriti 2026 BCE";
 
     return jsonResponse(
       {

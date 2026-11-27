@@ -50,6 +50,6 @@ export function parsePagination(url: URL, defaultLimit = 20, maxLimit = 50): {
 
 export function sanitizeCsvCell(value: unknown): string {
   const s = value === null || value === undefined ? "" : String(value);
-  const formulaSafe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  const formulaSafe = /^[\t\r\n]|^\s*[=+\-@]/.test(s) ? `'${s}` : s;
   return `"${formulaSafe.replace(/"/g, '""')}"`;
 }

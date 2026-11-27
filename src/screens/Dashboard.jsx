@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Badge, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
-import Title_Jumbotron from '../components/Title_Jumbotron';
+import TitleJumbotron from '../components/Title_Jumbotron';
 import { useAuth } from '../context/AuthContext';
 import { callEdgeFunction, supabase, UPI_CONFIG } from '../lib/supabaseClient';
 import './Register.scss';
@@ -23,10 +23,23 @@ function sortPaymentsNewestFirst(payments) {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { configured, loading: authLoading, session, profile, refreshProfile, signOut } = useAuth();
+  const {
+    configured,
+    loading: authLoading,
+    session,
+    profile,
+    profileLoadError,
+    mfaLoadError,
+    refreshProfile,
+    signOut,
+  } = useAuth();
 
   const [registrations, setRegistrations] = useState([]);
-  const [upiConfig, setUpiConfig] = useState(UPI_CONFIG);
+  const [upiConfig, setUpiConfig] = useState({
+    configured: false,
+    vpa: '',
+    payeeName: UPI_CONFIG.payeeName,
+  });
   const [loadingData, setLoadingData] = useState(false);
   const [dataError, setDataError] = useState('');
 
@@ -87,9 +100,11 @@ const Dashboard = () => {
       const res = await callEdgeFunction('get-my-registrations', { method: 'GET' });
       if (!mountedRef.current || seq !== loadSeqRef.current) return;
       setRegistrations(Array.isArray(res.registrations) ? res.registrations : []);
-      if (res.upi_config?.vpa) {
-        setUpiConfig({ vpa: res.upi_config.vpa, payeeName: res.upi_config.payee_name || UPI_CONFIG.payeeName });
-      }
+      setUpiConfig({
+        configured: Boolean(res.upi_config?.configured && res.upi_config?.vpa),
+        vpa: res.upi_config?.vpa || '',
+        payeeName: res.upi_config?.payee_name || UPI_CONFIG.payeeName,
+      });
     } catch (err) {
       if (!mountedRef.current || seq !== loadSeqRef.current) return;
       setDataError(err.message || 'Unable to load dashboard.');
@@ -104,9 +119,9 @@ const Dashboard = () => {
     loadDashboard();
   }, [loadDashboard]);
 
-  // Generate local offline QR when active registration modal opens
+  // Generate local offline QR when active registration modal opens and VPA is configured
   useEffect(() => {
-    if (!activeReg) {
+    if (!activeReg || !upiConfig.configured || !upiConfig.vpa) {
       setQrDataUrl('');
       return;
     }
@@ -151,9 +166,13 @@ const Dashboard = () => {
         setProfileError(error.message || 'Unable to save profile.');
         return;
       }
-      await refreshProfile();
+      const updated = await refreshProfile();
       if (mountedRef.current) {
-        setProfileMsg('Profile saved.');
+        if (updated) {
+          setProfileMsg('Profile saved.');
+        } else {
+          setProfileError('Profile saved, but could not refresh the latest server view. Reload to verify.');
+        }
       }
     } catch (err) {
       if (mountedRef.current) {
@@ -208,7 +227,7 @@ const Dashboard = () => {
 
   return (
     <div className="register-page-wrapper">
-      <Title_Jumbotron
+      <TitleJumbotron
         bigHeader="DELEGATE"
         bigHeaderCaps="DASHBOARD"
         subtitle="OFFICIAL PASSES, PAYMENT RECONCILIATION & PROFILE • TECHNORITI '26"
@@ -235,8 +254,18 @@ const Dashboard = () => {
                 </div>
                 <p className="text-white-50 small mb-3">{profile?.email || session?.user?.email}</p>
 
+                {profileLoadError && (
+                  <div role="alert" className="alert alert-danger py-2 px-3 small">
+                    Unable to load your profile record from the server. Some fields may be out of sync.
+                  </div>
+                )}
+                {mfaLoadError && (
+                  <div role="alert" className="alert alert-warning text-dark py-2 px-3 small">
+                    Multi-factor status could not be verified. Sign out and back in if staff actions are restricted.
+                  </div>
+                )}
                 {profileError && <div role="alert" className="alert alert-danger py-2 px-3 small">{profileError}</div>}
-                {profileMsg && <div role="status" className="alert alert-info py-2 px-3 small">{profileMsg}</div>}
+                {profileMsg && <div role="status" className="alert alert-info text-dark py-2 px-3 small">{profileMsg}</div>}
 
                 <Form onSubmit={handleSaveProfile}>
                   <Form.Group controlId="dash-full-name" className="mb-2">
@@ -338,7 +367,10 @@ const Dashboard = () => {
                                 {reg.primary_competition?.title || reg.primary_arena_id}
                               </span>
                             </div>
-                            <Badge bg={STATUS_BADGE[reg.status] || 'secondary'}>
+                            <Badge
+                              bg={STATUS_BADGE[reg.status] || 'secondary'}
+                              className={reg.status === 'PENDING_PAYMENT' || reg.status === 'PENDING_VERIFICATION' ? 'text-dark fw-semibold' : ''}
+                            >
                               {(reg.status || 'UNKNOWN').replace(/_/g, ' ')}
                             </Badge>
                           </div>
@@ -403,15 +435,26 @@ const Dashboard = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4 text-white">
-          {utrError && <div className="alert alert-danger small">{utrError}</div>}
+          {utrError && <div role="alert" className="alert alert-danger small">{utrError}</div>}
+          {!upiConfig.configured && (
+            <div role="alert" className="alert alert-warning text-dark small mb-3">
+              Official institutional UPI VPA is not yet configured on the server. Do not transfer funds until the verified treasury VPA is published.
+            </div>
+          )}
           <div className="text-center mb-3">
             {qrDataUrl && (
               <div className="p-2 bg-white rounded-3 d-inline-block mb-2">
-                <img src={qrDataUrl} alt="UPI QR" width="170" height="170" />
+                <img src={qrDataUrl} alt="UPI Payment QR Code" width="170" height="170" />
               </div>
             )}
-            <div className="small text-white-50">
-              VPA: <code className="text-purple">{upiConfig.vpa}</code> • Payable: <strong>₹{activeReg?.computed_total_inr}</strong>
+            <div className="small text-white-75">
+              VPA:{' '}
+              {upiConfig.configured ? (
+                <code className="text-purple">{upiConfig.vpa}</code>
+              ) : (
+                <strong className="text-warning">Pending Institutional Configuration</strong>
+              )}{' '}
+              • Payable: <strong>₹{activeReg?.computed_total_inr}</strong>
             </div>
           </div>
           <Form onSubmit={handleSubmitUtr}>
@@ -419,6 +462,7 @@ const Dashboard = () => {
               <Form.Label className="small text-white">12-Digit Numeric UTR *</Form.Label>
               <Form.Control
                 className="dark-input"
+                disabled={!upiConfig.configured}
                 value={utrInput}
                 onChange={(e) => setUtrInput(e.target.value.replace(/\D/g, '').slice(0, 12))}
                 maxLength={12}
@@ -427,7 +471,7 @@ const Dashboard = () => {
                 placeholder="e.g. 432109876543"
               />
             </Form.Group>
-            <Button type="submit" variant="purple" className="w-100" disabled={submittingUtr}>
+            <Button type="submit" variant="purple" className="w-100" disabled={submittingUtr || !upiConfig.configured}>
               {submittingUtr ? 'Submitting...' : 'Submit UTR for Verification'}
             </Button>
           </Form>
